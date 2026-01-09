@@ -181,26 +181,15 @@ const TestingTab = (function() {
    */
   function renderClubSelectGrid() {
     const container = document.getElementById('test-club-select-grid');
-    if (!container) {
-      console.log('⚠️ test-club-select-grid container not found');
-      return;
-    }
+    if (!container) return;
     
-    console.log('🔍 renderClubSelectGrid - userClubs:', userClubs);
-    if (userClubs.length > 0) {
-      console.log('🔍 First club fields:', Object.keys(userClubs[0]));
-      console.log('🔍 First club data:', userClubs[0]);
-    }
-    
-    // Group clubs by category for display (case-insensitive)
+    // Group clubs by category for display
     const categories = {
-      'Woods': userClubs.filter(c => c.category?.toLowerCase() === 'woods'),
-      'Hybrids': userClubs.filter(c => c.category?.toLowerCase() === 'hybrids'),
-      'Irons': userClubs.filter(c => c.category?.toLowerCase() === 'irons'),
-      'Wedges': userClubs.filter(c => c.category?.toLowerCase() === 'wedges')
+      'Woods': userClubs.filter(c => c.category === 'Woods'),
+      'Hybrids': userClubs.filter(c => c.category === 'Hybrids'),
+      'Irons': userClubs.filter(c => c.category === 'Irons'),
+      'Wedges': userClubs.filter(c => c.category === 'Wedges')
     };
-    
-    console.log('🔍 Categories:', categories);
     
     let html = '';
     for (const [category, clubs] of Object.entries(categories)) {
