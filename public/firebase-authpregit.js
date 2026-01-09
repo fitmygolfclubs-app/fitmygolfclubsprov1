@@ -678,11 +678,6 @@ function viewClient(clientId) {
     fetchLastAnalysis(client.last_analysis_id);
   }
   
-  // Initialize Testing Tab with client data
-  if (typeof TestingTab !== 'undefined') {
-    TestingTab.init(db, clientId);
-  }
-  
   console.log('✅ Loaded client:', client.display_name);
 }
 
