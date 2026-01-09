@@ -163,6 +163,15 @@ const TestingTab = (function() {
     `).join('');
   }
 
+  /**
+   * Attach event listeners for Testing Tab
+   */
+  function attachEventListeners() {
+    // Event listeners will be added as features are built
+    // For now, most interactions use inline onclick handlers
+    console.log('✅ TestingTab event listeners attached');
+  }
+
   // ============================================
   // WIZARD FLOW
   // ============================================
