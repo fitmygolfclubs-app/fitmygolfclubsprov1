@@ -278,14 +278,41 @@ const TestingTab = (function() {
    * Open ClubSelector for comparison club (Step 2)
    */
   function openComparisonSelector() {
+    if (typeof ClubSelector === 'undefined' || !ClubSelector.isReady()) {
+      console.warn('ClubSelector not available, use manual entry');
+      alert('Club database not loaded. Please use manual entry below.');
+      return;
+    }
+    
     // Use ClubSelector in 'known-type' mode
     ClubSelector.open({
       mode: 'known-type',
-      clubType: currentTest.clubA.clubType,
-      onSelect: (selectedClub) => {
-        currentTest.clubB = selectedClub;
+      clubType: currentTest.clubA?.clubType || 'Driver',
+      category: currentTest.clubA?.category || 'woods',
+      title: `Select Test Club (${currentTest.clubA?.clubType || 'Club'})`,
+      onSelect: (result) => {
+        currentTest.clubB = {
+          brand: result.brand,
+          model: result.model,
+          name: `${result.brand} ${result.model}`,
+          year: result.year,
+          clubHeadSpecId: result.clubHeadSpecId,
+          shaftBrand: result.shaftBrand,
+          shaftModel: result.shaftModel,
+          shaft: result.shaftBrand && result.shaftModel ? `${result.shaftBrand} ${result.shaftModel}` : 'Stock Shaft',
+          specs: result.specs,
+          isManual: false
+        };
         updateClubBDisplay();
         document.getElementById('test-step2-next').disabled = false;
+        
+        // Clear manual inputs since we used selector
+        const brandInput = document.getElementById('compare-brand-manual');
+        const modelInput = document.getElementById('compare-model-manual');
+        const shaftInput = document.getElementById('compare-shaft-manual');
+        if (brandInput) brandInput.value = '';
+        if (modelInput) modelInput.value = '';
+        if (shaftInput) shaftInput.value = '';
       },
       onCancel: () => {
         console.log('Club selection cancelled');
@@ -590,7 +617,53 @@ const TestingTab = (function() {
     
     document.getElementById('compare-preview').style.display = 'block';
     document.getElementById('compare-preview-name').textContent = club.name || `${club.brand} ${club.model}`;
-    document.getElementById('compare-preview-specs').textContent = club.shaft || 'Stock Shaft';
+    document.getElementById('compare-preview-specs').textContent = club.shaft || club.shaftModel || 'Stock Shaft';
+  }
+
+  /**
+   * Update comparison club from manual entry
+   */
+  function updateManualCompare() {
+    const brand = document.getElementById('compare-brand-manual')?.value?.trim();
+    const model = document.getElementById('compare-model-manual')?.value?.trim();
+    const shaft = document.getElementById('compare-shaft-manual')?.value?.trim();
+    
+    if (brand && model) {
+      currentTest.clubB = {
+        brand: brand,
+        model: model,
+        name: `${brand} ${model}`,
+        shaft: shaft || 'Stock Shaft',
+        isManual: true
+      };
+      updateClubBDisplay();
+      document.getElementById('test-step2-next').disabled = false;
+    } else {
+      // Not enough info yet
+      if (!currentTest.clubB?.isManual === false) {
+        // Only clear if it was a manual entry
+        currentTest.clubB = null;
+        document.getElementById('compare-preview').style.display = 'none';
+        document.getElementById('test-step2-next').disabled = true;
+      }
+    }
+  }
+
+  /**
+   * Clear comparison club selection
+   */
+  function clearComparisonClub() {
+    currentTest.clubB = null;
+    document.getElementById('compare-preview').style.display = 'none';
+    document.getElementById('test-step2-next').disabled = true;
+    
+    // Clear manual inputs
+    const brandInput = document.getElementById('compare-brand-manual');
+    const modelInput = document.getElementById('compare-model-manual');
+    const shaftInput = document.getElementById('compare-shaft-manual');
+    if (brandInput) brandInput.value = '';
+    if (modelInput) modelInput.value = '';
+    if (shaftInput) shaftInput.value = '';
   }
 
   function reset() {
@@ -631,6 +704,8 @@ const TestingTab = (function() {
     selectClub,
     goToStep,
     openComparisonSelector,
+    updateManualCompare,
+    clearComparisonClub,
     capturePhotoA,
     capturePhotoB,
     showManualEntryA,

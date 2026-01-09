@@ -1612,30 +1612,24 @@
                             Enter the club you're comparing against. This could be a demo club, rental, friend's club, or a club you're considering buying.
                         </div>
 
-                        <!-- Comparison Club Entry -->
+                        <!-- Comparison Club Entry - ClubSelector Integration -->
                         <div class="scenario-card" style="background: var(--bg-main); border: 1px solid var(--border-light); border-radius: 12px; padding: 16px;">
                             <div style="font-size: 10px; text-transform: uppercase; color: var(--green); margin-bottom: 12px; font-weight: 600;">Test Club (B)</div>
                             
+                            <button class="btn btn-secondary" style="width: 100%; padding: 16px; font-size: 14px;" onclick="TestingTab.openComparisonSelector()">
+                                <span style="margin-right: 8px;">🔍</span> Select Club from Database
+                            </button>
+                            
+                            <div style="text-align: center; color: var(--text-muted); margin: 12px 0; font-size: 12px;">— or enter manually —</div>
+                            
                             <div class="data-input-group" style="margin-bottom: 12px;">
                                 <div class="data-input-label">Brand *</div>
-                                <select class="data-input" id="compare-brand" onchange="updateCompareModels()">
-                                    <option value="">Select brand...</option>
-                                    <option value="TaylorMade">TaylorMade</option>
-                                    <option value="Titleist">Titleist</option>
-                                    <option value="Callaway">Callaway</option>
-                                    <option value="Ping">Ping</option>
-                                    <option value="Cobra">Cobra</option>
-                                    <option value="Mizuno">Mizuno</option>
-                                    <option value="Srixon">Srixon</option>
-                                    <option value="Cleveland">Cleveland</option>
-                                </select>
+                                <input type="text" class="data-input" id="compare-brand-manual" placeholder="e.g., TaylorMade" oninput="TestingTab.updateManualCompare()">
                             </div>
                             
                             <div class="data-input-group" style="margin-bottom: 12px;">
                                 <div class="data-input-label">Model *</div>
-                                <select class="data-input" id="compare-model" onchange="updateComparePreview()" disabled>
-                                    <option value="">Select brand first...</option>
-                                </select>
+                                <input type="text" class="data-input" id="compare-model-manual" placeholder="e.g., Qi10 Max" oninput="TestingTab.updateManualCompare()">
                             </div>
                             
                             <div class="data-input-group" style="margin-bottom: 12px;">
@@ -1643,13 +1637,7 @@
                                     <span>Shaft</span>
                                     <span class="unit-hint">optional</span>
                                 </div>
-                                <select class="data-input" id="compare-shaft" onchange="updateComparePreview()">
-                                    <option value="Stock">Stock Shaft</option>
-                                    <option value="Fujikura Ventus Blue 65g">Fujikura Ventus Blue 65g</option>
-                                    <option value="Fujikura Speeder NX 65g">Fujikura Speeder NX 65g</option>
-                                    <option value="Project X HZRDUS Black 63g">Project X HZRDUS Black 63g</option>
-                                    <option value="Mitsubishi Tensei AV Blue 65g">Mitsubishi Tensei AV Blue 65g</option>
-                                </select>
+                                <input type="text" class="data-input" id="compare-shaft-manual" placeholder="e.g., Fujikura Ventus Blue 6S" oninput="TestingTab.updateManualCompare()">
                             </div>
                         </div>
 
@@ -1663,6 +1651,7 @@
                                         <h3 id="compare-preview-name">TaylorMade Qi10</h3>
                                         <p id="compare-preview-specs">Stock Shaft</p>
                                     </div>
+                                    <button class="btn btn-ghost" style="margin-left: auto; padding: 4px 8px; font-size: 11px;" onclick="TestingTab.clearComparisonClub()">✕ Clear</button>
                                 </div>
                             </div>
                         </div>
