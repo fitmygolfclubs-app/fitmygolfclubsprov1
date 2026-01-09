@@ -1703,24 +1703,49 @@
                             </div>
                             
                             <div id="club-a-data" style="display: none; margin-top: 12px;">
+                                <!-- Required Fields -->
+                                <div style="font-size: 10px; color: var(--cyan); margin-bottom: 6px; text-transform: uppercase;">Required</div>
                                 <div style="display: flex; gap: 8px;">
                                     <div class="data-input-group" style="flex: 1; margin-bottom: 8px;">
-                                        <div class="data-input-label" style="font-size: 11px;">Ball Speed</div>
-                                        <input type="number" class="data-input" id="perf-ball-speed-a" placeholder="165" style="padding: 8px;">
+                                        <div class="data-input-label" style="font-size: 11px;">Ball Speed <span style="color: var(--text-muted);">(mph)</span></div>
+                                        <input type="number" class="data-input" id="perf-ball-speed-a" placeholder="165" style="padding: 8px;" oninput="updatePerfDataA()">
                                     </div>
                                     <div class="data-input-group" style="flex: 1; margin-bottom: 8px;">
-                                        <div class="data-input-label" style="font-size: 11px;">Carry</div>
-                                        <input type="number" class="data-input" id="perf-carry-a" placeholder="275" style="padding: 8px;">
+                                        <div class="data-input-label" style="font-size: 11px;">Carry <span style="color: var(--text-muted);">(yds)</span></div>
+                                        <input type="number" class="data-input" id="perf-carry-a" placeholder="275" style="padding: 8px;" oninput="updatePerfDataA()">
+                                    </div>
+                                </div>
+                                
+                                <!-- Optional Fields -->
+                                <div style="font-size: 10px; color: var(--text-muted); margin: 8px 0 6px 0; text-transform: uppercase;">Optional (enhances analysis)</div>
+                                <div style="display: flex; gap: 8px;">
+                                    <div class="data-input-group" style="flex: 1; margin-bottom: 8px;">
+                                        <div class="data-input-label" style="font-size: 11px;">Launch <span style="color: var(--text-muted);">(°)</span></div>
+                                        <input type="number" class="data-input" id="perf-launch-a" placeholder="12.5" step="0.1" style="padding: 8px;" oninput="updatePerfDataA()">
+                                    </div>
+                                    <div class="data-input-group" style="flex: 1; margin-bottom: 8px;">
+                                        <div class="data-input-label" style="font-size: 11px;">Spin <span style="color: var(--text-muted);">(rpm)</span></div>
+                                        <input type="number" class="data-input" id="perf-spin-a" placeholder="2400" style="padding: 8px;" oninput="updatePerfDataA()">
                                     </div>
                                 </div>
                                 <div style="display: flex; gap: 8px;">
                                     <div class="data-input-group" style="flex: 1; margin-bottom: 8px;">
-                                        <div class="data-input-label" style="font-size: 11px;">Launch</div>
-                                        <input type="number" class="data-input" id="perf-launch-a" placeholder="12.5" style="padding: 8px;">
+                                        <div class="data-input-label" style="font-size: 11px;">Club Speed <span style="color: var(--text-muted);">(mph)</span></div>
+                                        <input type="number" class="data-input" id="perf-club-speed-a" placeholder="105" style="padding: 8px;" oninput="updatePerfDataA()">
                                     </div>
                                     <div class="data-input-group" style="flex: 1; margin-bottom: 8px;">
-                                        <div class="data-input-label" style="font-size: 11px;">Spin</div>
-                                        <input type="number" class="data-input" id="perf-spin-a" placeholder="2400" style="padding: 8px;">
+                                        <div class="data-input-label" style="font-size: 11px;">Total Dist <span style="color: var(--text-muted);">(yds)</span></div>
+                                        <input type="number" class="data-input" id="perf-total-a" placeholder="290" style="padding: 8px;" oninput="updatePerfDataA()">
+                                    </div>
+                                </div>
+                                <div style="display: flex; gap: 8px;">
+                                    <div class="data-input-group" style="flex: 1; margin-bottom: 8px;">
+                                        <div class="data-input-label" style="font-size: 11px;">Attack Angle <span style="color: var(--text-muted);">(°)</span></div>
+                                        <input type="number" class="data-input" id="perf-attack-a" placeholder="-2.5" step="0.1" style="padding: 8px;" oninput="updatePerfDataA()">
+                                    </div>
+                                    <div class="data-input-group" style="flex: 1; margin-bottom: 8px;">
+                                        <div class="data-input-label" style="font-size: 11px;">Smash Factor</div>
+                                        <input type="number" class="data-input" id="perf-smash-a" placeholder="1.48" step="0.01" style="padding: 8px;" oninput="updatePerfDataA()">
                                     </div>
                                 </div>
                             </div>
@@ -1740,31 +1765,56 @@
                             </div>
                             
                             <div id="club-b-data" style="display: none; margin-top: 12px;">
+                                <!-- Required Fields -->
+                                <div style="font-size: 10px; color: var(--green); margin-bottom: 6px; text-transform: uppercase;">Required</div>
                                 <div style="display: flex; gap: 8px;">
                                     <div class="data-input-group" style="flex: 1; margin-bottom: 8px;">
-                                        <div class="data-input-label" style="font-size: 11px;">Ball Speed</div>
-                                        <input type="number" class="data-input" id="perf-ball-speed-b" placeholder="168" style="padding: 8px;">
+                                        <div class="data-input-label" style="font-size: 11px;">Ball Speed <span style="color: var(--text-muted);">(mph)</span></div>
+                                        <input type="number" class="data-input" id="perf-ball-speed-b" placeholder="168" style="padding: 8px;" oninput="updatePerfDataB()">
                                     </div>
                                     <div class="data-input-group" style="flex: 1; margin-bottom: 8px;">
-                                        <div class="data-input-label" style="font-size: 11px;">Carry</div>
-                                        <input type="number" class="data-input" id="perf-carry-b" placeholder="280" style="padding: 8px;">
+                                        <div class="data-input-label" style="font-size: 11px;">Carry <span style="color: var(--text-muted);">(yds)</span></div>
+                                        <input type="number" class="data-input" id="perf-carry-b" placeholder="280" style="padding: 8px;" oninput="updatePerfDataB()">
+                                    </div>
+                                </div>
+                                
+                                <!-- Optional Fields -->
+                                <div style="font-size: 10px; color: var(--text-muted); margin: 8px 0 6px 0; text-transform: uppercase;">Optional (enhances analysis)</div>
+                                <div style="display: flex; gap: 8px;">
+                                    <div class="data-input-group" style="flex: 1; margin-bottom: 8px;">
+                                        <div class="data-input-label" style="font-size: 11px;">Launch <span style="color: var(--text-muted);">(°)</span></div>
+                                        <input type="number" class="data-input" id="perf-launch-b" placeholder="13.2" step="0.1" style="padding: 8px;" oninput="updatePerfDataB()">
+                                    </div>
+                                    <div class="data-input-group" style="flex: 1; margin-bottom: 8px;">
+                                        <div class="data-input-label" style="font-size: 11px;">Spin <span style="color: var(--text-muted);">(rpm)</span></div>
+                                        <input type="number" class="data-input" id="perf-spin-b" placeholder="2200" style="padding: 8px;" oninput="updatePerfDataB()">
                                     </div>
                                 </div>
                                 <div style="display: flex; gap: 8px;">
                                     <div class="data-input-group" style="flex: 1; margin-bottom: 8px;">
-                                        <div class="data-input-label" style="font-size: 11px;">Launch</div>
-                                        <input type="number" class="data-input" id="perf-launch-b" placeholder="13.2" style="padding: 8px;">
+                                        <div class="data-input-label" style="font-size: 11px;">Club Speed <span style="color: var(--text-muted);">(mph)</span></div>
+                                        <input type="number" class="data-input" id="perf-club-speed-b" placeholder="107" style="padding: 8px;" oninput="updatePerfDataB()">
                                     </div>
                                     <div class="data-input-group" style="flex: 1; margin-bottom: 8px;">
-                                        <div class="data-input-label" style="font-size: 11px;">Spin</div>
-                                        <input type="number" class="data-input" id="perf-spin-b" placeholder="2200" style="padding: 8px;">
+                                        <div class="data-input-label" style="font-size: 11px;">Total Dist <span style="color: var(--text-muted);">(yds)</span></div>
+                                        <input type="number" class="data-input" id="perf-total-b" placeholder="295" style="padding: 8px;" oninput="updatePerfDataB()">
+                                    </div>
+                                </div>
+                                <div style="display: flex; gap: 8px;">
+                                    <div class="data-input-group" style="flex: 1; margin-bottom: 8px;">
+                                        <div class="data-input-label" style="font-size: 11px;">Attack Angle <span style="color: var(--text-muted);">(°)</span></div>
+                                        <input type="number" class="data-input" id="perf-attack-b" placeholder="-1.8" step="0.1" style="padding: 8px;" oninput="updatePerfDataB()">
+                                    </div>
+                                    <div class="data-input-group" style="flex: 1; margin-bottom: 8px;">
+                                        <div class="data-input-label" style="font-size: 11px;">Smash Factor</div>
+                                        <input type="number" class="data-input" id="perf-smash-b" placeholder="1.50" step="0.01" style="padding: 8px;" oninput="updatePerfDataB()">
                                     </div>
                                 </div>
                             </div>
                             <button class="btn-skip" onclick="showClubBManualEntry()" style="font-size: 12px;">Enter manually →</button>
                         </div>
 
-                        <button class="btn btn-primary" id="data-continue-btn" onclick="goToTestStep(4)">Continue to Goals</button>
+                        <button class="btn btn-primary" id="data-continue-btn" onclick="goToTestStep(4)" disabled style="opacity: 0.5;">Continue to Goals</button>
 
                         <div class="scenario-nav" style="margin-top: 16px;">
                             <button class="btn btn-secondary" onclick="goToTestStep(2)">← Back</button>
@@ -9949,6 +9999,9 @@
         let perfTestState = {
             currentStep: 1,
             selectedClub: null,
+            compareClub: null,
+            clubAData: {},
+            clubBData: {},
             goals: [],
             isComplete: false,
             photoCount: 0,
@@ -10183,7 +10236,72 @@
             document.querySelectorAll('#tab-testing .scenario-step').forEach(s => s.classList.remove('active'));
             document.getElementById('test-step-' + step).classList.add('active');
             
+            // Populate Step 3 displays when entering
+            if (step === 3) {
+                updateStep3Displays();
+            }
+            
             perfTestState.currentStep = step;
+        }
+        
+        function updateStep3Displays() {
+            // Club A (Your Club)
+            if (perfTestState.selectedClub) {
+                const clubA = perfTestState.selectedClub;
+                document.getElementById('step3-your-club').textContent = clubA.clubType || 'Club A';
+                document.getElementById('step3-your-specs').textContent = `${clubA.brand || ''} ${clubA.model || ''}`.trim();
+            }
+            
+            // Club B (Test Club)
+            if (perfTestState.compareClub) {
+                const clubB = perfTestState.compareClub;
+                document.getElementById('step3-compare-club').textContent = clubB.name || `${clubB.brand || ''} ${clubB.model || ''}`.trim();
+                document.getElementById('step3-compare-specs').textContent = clubB.shaft || 'Stock Shaft';
+            }
+        }
+        
+        function updatePerfDataA() {
+            perfTestState.clubAData = {
+                // Required
+                ballSpeed: parseFloat(document.getElementById('perf-ball-speed-a')?.value) || null,
+                carry: parseFloat(document.getElementById('perf-carry-a')?.value) || null,
+                // Optional - enhances analysis
+                launch: parseFloat(document.getElementById('perf-launch-a')?.value) || null,
+                spin: parseFloat(document.getElementById('perf-spin-a')?.value) || null,
+                clubSpeed: parseFloat(document.getElementById('perf-club-speed-a')?.value) || null,
+                totalDistance: parseFloat(document.getElementById('perf-total-a')?.value) || null,
+                attackAngle: parseFloat(document.getElementById('perf-attack-a')?.value) || null,
+                smashFactor: parseFloat(document.getElementById('perf-smash-a')?.value) || null
+            };
+            validateStep3Data();
+        }
+        
+        function updatePerfDataB() {
+            perfTestState.clubBData = {
+                // Required
+                ballSpeed: parseFloat(document.getElementById('perf-ball-speed-b')?.value) || null,
+                carry: parseFloat(document.getElementById('perf-carry-b')?.value) || null,
+                // Optional - enhances analysis
+                launch: parseFloat(document.getElementById('perf-launch-b')?.value) || null,
+                spin: parseFloat(document.getElementById('perf-spin-b')?.value) || null,
+                clubSpeed: parseFloat(document.getElementById('perf-club-speed-b')?.value) || null,
+                totalDistance: parseFloat(document.getElementById('perf-total-b')?.value) || null,
+                attackAngle: parseFloat(document.getElementById('perf-attack-b')?.value) || null,
+                smashFactor: parseFloat(document.getElementById('perf-smash-b')?.value) || null
+            };
+            validateStep3Data();
+        }
+        
+        function validateStep3Data() {
+            // Need at least ball speed and carry for both clubs
+            const aValid = perfTestState.clubAData?.ballSpeed && perfTestState.clubAData?.carry;
+            const bValid = perfTestState.clubBData?.ballSpeed && perfTestState.clubBData?.carry;
+            
+            const continueBtn = document.getElementById('data-continue-btn');
+            if (continueBtn) {
+                continueBtn.disabled = !(aValid && bValid);
+                continueBtn.style.opacity = (aValid && bValid) ? '1' : '0.5';
+            }
         }
 
         function toggleManualEntry(btn) {

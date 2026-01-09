@@ -277,6 +277,11 @@ const TestingTab = (function() {
     // Update state
     currentTest.clubA = club;
     
+    // Sync with global perfTestState for inline functions
+    if (typeof perfTestState !== 'undefined') {
+      perfTestState.selectedClub = club;
+    }
+    
     // Update UI
     document.querySelectorAll('.club-select-item').forEach(item => 
       item.classList.remove('selected')
@@ -337,7 +342,7 @@ const TestingTab = (function() {
       category: category,
       title: `Select ${clubType} to Compare`,
       onSelect: (result) => {
-        currentTest.clubB = {
+        const clubB = {
           brand: result.brand,
           model: result.model,
           name: `${result.brand} ${result.model}`,
@@ -350,8 +355,15 @@ const TestingTab = (function() {
           specs: result.specs,
           isManual: false
         };
+        
+        currentTest.clubB = clubB;
         updateClubBDisplay();
         document.getElementById('test-step2-next').disabled = false;
+        
+        // Sync with global perfTestState for inline functions
+        if (typeof perfTestState !== 'undefined') {
+          perfTestState.compareClub = clubB;
+        }
         
         // Clear manual inputs since we used selector
         const brandInput = document.getElementById('compare-brand-manual');
