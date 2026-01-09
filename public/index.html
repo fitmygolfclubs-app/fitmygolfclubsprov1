@@ -1748,6 +1748,25 @@
                                         <input type="number" class="data-input" id="perf-smash-a" placeholder="1.48" step="0.01" style="padding: 8px;" oninput="updatePerfDataA()">
                                     </div>
                                 </div>
+                                <div style="display: flex; gap: 8px;">
+                                    <div class="data-input-group" style="flex: 1; margin-bottom: 8px;">
+                                        <div class="data-input-label" style="font-size: 11px;">Club Path <span style="color: var(--text-muted);">(°)</span></div>
+                                        <input type="number" class="data-input" id="perf-path-a" placeholder="2.1" step="0.1" style="padding: 8px;" oninput="updatePerfDataA()">
+                                    </div>
+                                    <div class="data-input-group" style="flex: 1; margin-bottom: 8px;">
+                                        <div class="data-input-label" style="font-size: 11px;">Face Angle <span style="color: var(--text-muted);">(°)</span></div>
+                                        <input type="number" class="data-input" id="perf-face-a" placeholder="1.2" step="0.1" style="padding: 8px;" oninput="updatePerfDataA()">
+                                    </div>
+                                </div>
+                                <div style="display: flex; gap: 8px;">
+                                    <div class="data-input-group" style="flex: 1; margin-bottom: 8px;">
+                                        <div class="data-input-label" style="font-size: 11px;">Height/Apex <span style="color: var(--text-muted);">(ft)</span></div>
+                                        <input type="number" class="data-input" id="perf-height-a" placeholder="95" style="padding: 8px;" oninput="updatePerfDataA()">
+                                    </div>
+                                    <div class="data-input-group" style="flex: 1; margin-bottom: 8px;">
+                                        <!-- Placeholder for future OCR fields -->
+                                    </div>
+                                </div>
                             </div>
                             <button class="btn-skip" onclick="showClubAManualEntry()" style="font-size: 12px;">Enter manually →</button>
                         </div>
@@ -1810,6 +1829,25 @@
                                         <input type="number" class="data-input" id="perf-smash-b" placeholder="1.50" step="0.01" style="padding: 8px;" oninput="updatePerfDataB()">
                                     </div>
                                 </div>
+                                <div style="display: flex; gap: 8px;">
+                                    <div class="data-input-group" style="flex: 1; margin-bottom: 8px;">
+                                        <div class="data-input-label" style="font-size: 11px;">Club Path <span style="color: var(--text-muted);">(°)</span></div>
+                                        <input type="number" class="data-input" id="perf-path-b" placeholder="1.8" step="0.1" style="padding: 8px;" oninput="updatePerfDataB()">
+                                    </div>
+                                    <div class="data-input-group" style="flex: 1; margin-bottom: 8px;">
+                                        <div class="data-input-label" style="font-size: 11px;">Face Angle <span style="color: var(--text-muted);">(°)</span></div>
+                                        <input type="number" class="data-input" id="perf-face-b" placeholder="0.8" step="0.1" style="padding: 8px;" oninput="updatePerfDataB()">
+                                    </div>
+                                </div>
+                                <div style="display: flex; gap: 8px;">
+                                    <div class="data-input-group" style="flex: 1; margin-bottom: 8px;">
+                                        <div class="data-input-label" style="font-size: 11px;">Height/Apex <span style="color: var(--text-muted);">(ft)</span></div>
+                                        <input type="number" class="data-input" id="perf-height-b" placeholder="98" style="padding: 8px;" oninput="updatePerfDataB()">
+                                    </div>
+                                    <div class="data-input-group" style="flex: 1; margin-bottom: 8px;">
+                                        <!-- Placeholder for future OCR fields -->
+                                    </div>
+                                </div>
                             </div>
                             <button class="btn-skip" onclick="showClubBManualEntry()" style="font-size: 12px;">Enter manually →</button>
                         </div>
@@ -1856,15 +1894,15 @@
                     <div class="scenario-step" id="test-step-5">
                         <div class="perf-test-header">
                             <div class="perf-test-title">📊 Comparison Results</div>
-                            <div class="perf-test-subtitle">Driver Test • Dec 27, 2024</div>
+                            <div class="perf-test-subtitle" id="results-subtitle">Driver Test • Dec 27, 2024</div>
                         </div>
 
                         <!-- Winner Summary -->
                         <div class="test-results">
-                            <div class="test-result-summary" style="background: var(--green-dim); border: 1px solid var(--green);">
-                                <div class="test-result-icon">🏆</div>
-                                <div class="test-result-title" style="color: var(--green);">Test Club (B) Wins!</div>
-                                <div class="test-result-subtitle">TaylorMade Qi10 outperforms your current driver</div>
+                            <div class="test-result-summary" id="winner-summary" style="background: var(--green-dim); border: 1px solid var(--green);">
+                                <div class="test-result-icon" id="winner-icon">🏆</div>
+                                <div class="test-result-title" id="winner-title" style="color: var(--green);">Test Club (B) Wins!</div>
+                                <div class="test-result-subtitle" id="winner-subtitle">TaylorMade Qi10 outperforms your current driver</div>
                             </div>
                         </div>
 
@@ -1879,56 +1917,101 @@
                                 <div style="flex: 1; font-size: 11px; text-transform: uppercase; color: var(--green); text-align: center;">Test Club (B)</div>
                             </div>
                             
-                            <!-- Ball Speed Row -->
-                            <div style="display: flex; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--border-light);">
-                                <div style="flex: 1; color: var(--text-muted);">Ball Speed</div>
-                                <div style="flex: 1; text-align: center; font-weight: 600;">167 mph</div>
-                                <div style="flex: 1; text-align: center; font-weight: 600; color: var(--green);">170 mph ↑</div>
-                            </div>
-                            
-                            <!-- Launch Row -->
-                            <div style="display: flex; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--border-light);">
-                                <div style="flex: 1; color: var(--text-muted);">Launch Angle</div>
-                                <div style="flex: 1; text-align: center; font-weight: 600;">11.2°</div>
-                                <div style="flex: 1; text-align: center; font-weight: 600; color: var(--green);">12.8° ↑</div>
-                            </div>
-                            
-                            <!-- Spin Row -->
-                            <div style="display: flex; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--border-light);">
-                                <div style="flex: 1; color: var(--text-muted);">Spin Rate</div>
-                                <div style="flex: 1; text-align: center; font-weight: 600;">2650 rpm</div>
-                                <div style="flex: 1; text-align: center; font-weight: 600; color: var(--green);">2350 rpm ↓</div>
-                            </div>
-                            
-                            <!-- Carry Row -->
-                            <div style="display: flex; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--border-light);">
-                                <div style="flex: 1; color: var(--text-muted);">Carry Distance</div>
-                                <div style="flex: 1; text-align: center; font-weight: 600;">275 yds</div>
-                                <div style="flex: 1; text-align: center; font-weight: 600; color: var(--green);">285 yds ↑</div>
-                            </div>
-                            
-                            <!-- Total Row -->
-                            <div style="display: flex; gap: 8px; padding: 10px 0;">
-                                <div style="flex: 1; color: var(--text-muted);">Total Distance</div>
-                                <div style="flex: 1; text-align: center; font-weight: 600;">295 yds</div>
-                                <div style="flex: 1; text-align: center; font-weight: 600; color: var(--green);">308 yds ↑</div>
+                            <!-- Dynamic Comparison Rows -->
+                            <div id="comparison-rows">
+                                <!-- Ball Speed Row -->
+                                <div class="comparison-row" id="row-ballSpeed" style="display: flex; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--border-light);">
+                                    <div style="flex: 1; color: var(--text-muted);">Ball Speed</div>
+                                    <div style="flex: 1; text-align: center; font-weight: 600;" id="result-ballSpeed-a">-- mph</div>
+                                    <div style="flex: 1; text-align: center; font-weight: 600;" id="result-ballSpeed-b">-- mph</div>
+                                </div>
+                                
+                                <!-- Carry Row -->
+                                <div class="comparison-row" id="row-carry" style="display: flex; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--border-light);">
+                                    <div style="flex: 1; color: var(--text-muted);">Carry Distance</div>
+                                    <div style="flex: 1; text-align: center; font-weight: 600;" id="result-carry-a">-- yds</div>
+                                    <div style="flex: 1; text-align: center; font-weight: 600;" id="result-carry-b">-- yds</div>
+                                </div>
+                                
+                                <!-- Launch Row (optional) -->
+                                <div class="comparison-row" id="row-launch" style="display: none; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--border-light);">
+                                    <div style="flex: 1; color: var(--text-muted);">Launch Angle</div>
+                                    <div style="flex: 1; text-align: center; font-weight: 600;" id="result-launch-a">--°</div>
+                                    <div style="flex: 1; text-align: center; font-weight: 600;" id="result-launch-b">--°</div>
+                                </div>
+                                
+                                <!-- Spin Row (optional) -->
+                                <div class="comparison-row" id="row-spin" style="display: none; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--border-light);">
+                                    <div style="flex: 1; color: var(--text-muted);">Spin Rate</div>
+                                    <div style="flex: 1; text-align: center; font-weight: 600;" id="result-spin-a">-- rpm</div>
+                                    <div style="flex: 1; text-align: center; font-weight: 600;" id="result-spin-b">-- rpm</div>
+                                </div>
+                                
+                                <!-- Club Speed Row (optional) -->
+                                <div class="comparison-row" id="row-clubSpeed" style="display: none; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--border-light);">
+                                    <div style="flex: 1; color: var(--text-muted);">Club Speed</div>
+                                    <div style="flex: 1; text-align: center; font-weight: 600;" id="result-clubSpeed-a">-- mph</div>
+                                    <div style="flex: 1; text-align: center; font-weight: 600;" id="result-clubSpeed-b">-- mph</div>
+                                </div>
+                                
+                                <!-- Total Distance Row (optional) -->
+                                <div class="comparison-row" id="row-total" style="display: none; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--border-light);">
+                                    <div style="flex: 1; color: var(--text-muted);">Total Distance</div>
+                                    <div style="flex: 1; text-align: center; font-weight: 600;" id="result-total-a">-- yds</div>
+                                    <div style="flex: 1; text-align: center; font-weight: 600;" id="result-total-b">-- yds</div>
+                                </div>
+                                
+                                <!-- Smash Factor Row (optional) -->
+                                <div class="comparison-row" id="row-smash" style="display: none; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--border-light);">
+                                    <div style="flex: 1; color: var(--text-muted);">Smash Factor</div>
+                                    <div style="flex: 1; text-align: center; font-weight: 600;" id="result-smash-a">--</div>
+                                    <div style="flex: 1; text-align: center; font-weight: 600;" id="result-smash-b">--</div>
+                                </div>
+                                
+                                <!-- Attack Angle Row (optional) -->
+                                <div class="comparison-row" id="row-attack" style="display: none; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--border-light);">
+                                    <div style="flex: 1; color: var(--text-muted);">Attack Angle</div>
+                                    <div style="flex: 1; text-align: center; font-weight: 600;" id="result-attack-a">--°</div>
+                                    <div style="flex: 1; text-align: center; font-weight: 600;" id="result-attack-b">--°</div>
+                                </div>
+                                
+                                <!-- Club Path Row (optional) -->
+                                <div class="comparison-row" id="row-path" style="display: none; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--border-light);">
+                                    <div style="flex: 1; color: var(--text-muted);">Club Path</div>
+                                    <div style="flex: 1; text-align: center; font-weight: 600;" id="result-path-a">--°</div>
+                                    <div style="flex: 1; text-align: center; font-weight: 600;" id="result-path-b">--°</div>
+                                </div>
+                                
+                                <!-- Face Angle Row (optional) -->
+                                <div class="comparison-row" id="row-face" style="display: none; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--border-light);">
+                                    <div style="flex: 1; color: var(--text-muted);">Face Angle</div>
+                                    <div style="flex: 1; text-align: center; font-weight: 600;" id="result-face-a">--°</div>
+                                    <div style="flex: 1; text-align: center; font-weight: 600;" id="result-face-b">--°</div>
+                                </div>
+                                
+                                <!-- Height/Apex Row (optional) -->
+                                <div class="comparison-row" id="row-height" style="display: none; gap: 8px; padding: 10px 0;">
+                                    <div style="flex: 1; color: var(--text-muted);">Height/Apex</div>
+                                    <div style="flex: 1; text-align: center; font-weight: 600;" id="result-height-a">-- ft</div>
+                                    <div style="flex: 1; text-align: center; font-weight: 600;" id="result-height-b">-- ft</div>
+                                </div>
                             </div>
                         </div>
 
                         <!-- Net Gains Summary -->
-                        <div style="background: var(--green-dim); border-radius: 10px; padding: 16px; margin-bottom: 16px;">
-                            <div style="font-size: 12px; text-transform: uppercase; color: var(--green); margin-bottom: 8px; font-weight: 600;">Net Gains with Test Club (B)</div>
-                            <div style="display: flex; justify-content: space-around; text-align: center;">
+                        <div id="net-gains-section" style="background: var(--green-dim); border-radius: 10px; padding: 16px; margin-bottom: 16px;">
+                            <div style="font-size: 12px; text-transform: uppercase; margin-bottom: 8px; font-weight: 600;" id="net-gains-label">Net Gains with Test Club (B)</div>
+                            <div id="net-gains-content" style="display: flex; justify-content: space-around; text-align: center;">
                                 <div>
-                                    <div style="font-size: 24px; font-weight: 700; color: var(--green);">+10</div>
+                                    <div style="font-size: 24px; font-weight: 700;" id="net-carry">+0</div>
                                     <div style="font-size: 11px; color: var(--text-muted);">yards carry</div>
                                 </div>
                                 <div>
-                                    <div style="font-size: 24px; font-weight: 700; color: var(--green);">+3</div>
+                                    <div style="font-size: 24px; font-weight: 700;" id="net-ballspeed">+0</div>
                                     <div style="font-size: 11px; color: var(--text-muted);">mph ball speed</div>
                                 </div>
-                                <div>
-                                    <div style="font-size: 24px; font-weight: 700; color: var(--green);">-300</div>
+                                <div id="net-spin-container">
+                                    <div style="font-size: 24px; font-weight: 700;" id="net-spin">0</div>
                                     <div style="font-size: 11px; color: var(--text-muted);">rpm spin</div>
                                 </div>
                             </div>
@@ -1938,8 +2021,8 @@
                             <div class="test-ai-header">
                                 <span>🤖</span> AI Analysis <span class="patent-tag">Patent Pending</span>
                             </div>
-                            <div class="test-ai-text">
-                                The TaylorMade Qi10 shows a significant improvement over your current Stealth 2. The higher launch angle (12.8° vs 11.2°) combined with lower spin (2350 vs 2650 rpm) creates a more optimal ball flight for maximum distance. You're gaining 10 yards of carry and 13 yards total. This is a strong candidate to replace your current driver.
+                            <div class="test-ai-text" id="ai-analysis-text">
+                                Loading analysis...
                             </div>
                         </div>
 
@@ -10265,13 +10348,28 @@
                 // Required
                 ballSpeed: parseFloat(document.getElementById('perf-ball-speed-a')?.value) || null,
                 carry: parseFloat(document.getElementById('perf-carry-a')?.value) || null,
-                // Optional - enhances analysis
+                // Optional - manual entry
                 launch: parseFloat(document.getElementById('perf-launch-a')?.value) || null,
                 spin: parseFloat(document.getElementById('perf-spin-a')?.value) || null,
                 clubSpeed: parseFloat(document.getElementById('perf-club-speed-a')?.value) || null,
                 totalDistance: parseFloat(document.getElementById('perf-total-a')?.value) || null,
                 attackAngle: parseFloat(document.getElementById('perf-attack-a')?.value) || null,
-                smashFactor: parseFloat(document.getElementById('perf-smash-a')?.value) || null
+                smashFactor: parseFloat(document.getElementById('perf-smash-a')?.value) || null,
+                clubPath: parseFloat(document.getElementById('perf-path-a')?.value) || null,
+                faceAngle: parseFloat(document.getElementById('perf-face-a')?.value) || null,
+                height: parseFloat(document.getElementById('perf-height-a')?.value) || null,
+                // Future OCR fields (full TrackMan schema)
+                launchDirection: null,
+                spinAxis: null,
+                landingAngle: null,
+                curve: null,
+                side: null,
+                hangTime: null,
+                faceToPath: null,
+                dynamicLoft: null,
+                spinLoft: null,
+                lowPoint: null,
+                impactLocation: null
             };
             validateStep3Data();
         }
@@ -10281,13 +10379,28 @@
                 // Required
                 ballSpeed: parseFloat(document.getElementById('perf-ball-speed-b')?.value) || null,
                 carry: parseFloat(document.getElementById('perf-carry-b')?.value) || null,
-                // Optional - enhances analysis
+                // Optional - manual entry
                 launch: parseFloat(document.getElementById('perf-launch-b')?.value) || null,
                 spin: parseFloat(document.getElementById('perf-spin-b')?.value) || null,
                 clubSpeed: parseFloat(document.getElementById('perf-club-speed-b')?.value) || null,
                 totalDistance: parseFloat(document.getElementById('perf-total-b')?.value) || null,
                 attackAngle: parseFloat(document.getElementById('perf-attack-b')?.value) || null,
-                smashFactor: parseFloat(document.getElementById('perf-smash-b')?.value) || null
+                smashFactor: parseFloat(document.getElementById('perf-smash-b')?.value) || null,
+                clubPath: parseFloat(document.getElementById('perf-path-b')?.value) || null,
+                faceAngle: parseFloat(document.getElementById('perf-face-b')?.value) || null,
+                height: parseFloat(document.getElementById('perf-height-b')?.value) || null,
+                // Future OCR fields (full TrackMan schema)
+                launchDirection: null,
+                spinAxis: null,
+                landingAngle: null,
+                curve: null,
+                side: null,
+                hangTime: null,
+                faceToPath: null,
+                dynamicLoft: null,
+                spinLoft: null,
+                lowPoint: null,
+                impactLocation: null
             };
             validateStep3Data();
         }
@@ -10325,6 +10438,8 @@
                 currentStep: 1,
                 selectedClub: null,
                 compareClub: null,
+                clubAData: {},
+                clubBData: {},
                 goals: [],
                 isComplete: false,
                 photoCount: 0,
@@ -10337,11 +10452,26 @@
             document.getElementById('test-step1-next').disabled = true;
             
             // Reset comparison club form
-            document.getElementById('compare-brand').value = '';
-            document.getElementById('compare-model').value = '';
-            document.getElementById('compare-model').disabled = true;
-            document.getElementById('compare-shaft').value = 'Stock';
-            document.getElementById('compare-preview').style.display = 'none';
+            const compareBrand = document.getElementById('compare-brand');
+            const compareModel = document.getElementById('compare-model');
+            if (compareBrand) compareBrand.value = '';
+            if (compareModel) {
+                compareModel.value = '';
+                compareModel.disabled = true;
+            }
+            const compareShaft = document.getElementById('compare-shaft');
+            if (compareShaft) compareShaft.value = 'Stock';
+            
+            // Reset manual entry fields
+            const brandManual = document.getElementById('compare-brand-manual');
+            const modelManual = document.getElementById('compare-model-manual');
+            const shaftManual = document.getElementById('compare-shaft-manual');
+            if (brandManual) brandManual.value = '';
+            if (modelManual) modelManual.value = '';
+            if (shaftManual) shaftManual.value = '';
+            
+            const preview = document.getElementById('compare-preview');
+            if (preview) preview.style.display = 'none';
             document.getElementById('test-step2-next').disabled = true;
             
             // Reset data entry areas
@@ -10351,6 +10481,27 @@
             document.getElementById('photo-capture-zone-b').style.display = 'block';
             document.getElementById('photo-capture-zone-b').innerHTML = '<div class="photo-capture-icon" style="font-size: 24px;">📸</div><div class="photo-capture-text" style="font-size: 13px;">Capture TEST club\'s data</div>';
             document.getElementById('club-b-data').style.display = 'none';
+            
+            // Reset all data input fields
+            const dataFields = [
+                'perf-ball-speed-a', 'perf-carry-a', 'perf-launch-a', 'perf-spin-a',
+                'perf-club-speed-a', 'perf-total-a', 'perf-attack-a', 'perf-smash-a',
+                'perf-path-a', 'perf-face-a', 'perf-height-a',
+                'perf-ball-speed-b', 'perf-carry-b', 'perf-launch-b', 'perf-spin-b',
+                'perf-club-speed-b', 'perf-total-b', 'perf-attack-b', 'perf-smash-b',
+                'perf-path-b', 'perf-face-b', 'perf-height-b'
+            ];
+            dataFields.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.value = '';
+            });
+            
+            // Reset continue button
+            const continueBtn = document.getElementById('data-continue-btn');
+            if (continueBtn) {
+                continueBtn.disabled = true;
+                continueBtn.style.opacity = '0.5';
+            }
             
             goToTestStep(1);
         }
@@ -10374,9 +10525,215 @@
                 updateCreditsDisplay();
             }
             
+            // Populate results from captured data
+            populateTestResults();
+            
             // Show results (now step 5)
             goToTestStep(5);
             perfTestState.isComplete = true;
+        }
+        
+        function populateTestResults() {
+            const dataA = perfTestState.clubAData || {};
+            const dataB = perfTestState.clubBData || {};
+            const clubA = perfTestState.selectedClub || {};
+            const clubB = perfTestState.compareClub || {};
+            
+            // Update subtitle with club type and date
+            const clubType = clubA.clubType || 'Club';
+            const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            document.getElementById('results-subtitle').textContent = `${clubType} Test • ${today}`;
+            
+            // Calculate winner based on carry distance (primary metric)
+            const carryDiff = (dataB.carry || 0) - (dataA.carry || 0);
+            const bWins = carryDiff > 0;
+            
+            // Update winner display
+            const winnerSummary = document.getElementById('winner-summary');
+            const winnerIcon = document.getElementById('winner-icon');
+            const winnerTitle = document.getElementById('winner-title');
+            const winnerSubtitle = document.getElementById('winner-subtitle');
+            
+            if (Math.abs(carryDiff) < 2) {
+                // Tie
+                winnerSummary.style.background = 'var(--bg-card)';
+                winnerSummary.style.border = '1px solid var(--border-light)';
+                winnerIcon.textContent = '🤝';
+                winnerTitle.textContent = 'Too Close to Call';
+                winnerTitle.style.color = 'var(--text-muted)';
+                winnerSubtitle.textContent = 'Both clubs perform similarly';
+            } else if (bWins) {
+                winnerSummary.style.background = 'var(--green-dim)';
+                winnerSummary.style.border = '1px solid var(--green)';
+                winnerIcon.textContent = '🏆';
+                winnerTitle.textContent = 'Test Club (B) Wins!';
+                winnerTitle.style.color = 'var(--green)';
+                winnerSubtitle.textContent = `${clubB.name || 'Test Club'} outperforms your current ${clubType.toLowerCase()}`;
+            } else {
+                winnerSummary.style.background = 'var(--cyan-dim)';
+                winnerSummary.style.border = '1px solid var(--cyan)';
+                winnerIcon.textContent = '✓';
+                winnerTitle.textContent = 'Your Club (A) Wins!';
+                winnerTitle.style.color = 'var(--cyan)';
+                winnerSubtitle.textContent = `Keep your current ${clubA.brand || ''} ${clubA.model || ''}`.trim();
+            }
+            
+            // Populate comparison rows
+            populateMetricRow('ballSpeed', dataA.ballSpeed, dataB.ballSpeed, 'mph', true); // higher is better
+            populateMetricRow('carry', dataA.carry, dataB.carry, 'yds', true);
+            populateMetricRow('launch', dataA.launch, dataB.launch, '°', true);
+            
+            // For spin: lower is better for woods/hybrids (distance), higher for wedges (control)
+            const category = (clubA.category || '').toLowerCase();
+            const isDistanceClub = category === 'woods' || category === 'hybrids' || category === 'driver';
+            populateMetricRow('spin', dataA.spin, dataB.spin, 'rpm', !isDistanceClub);
+            
+            populateMetricRow('clubSpeed', dataA.clubSpeed, dataB.clubSpeed, 'mph', true);
+            populateMetricRow('total', dataA.totalDistance, dataB.totalDistance, 'yds', true);
+            populateMetricRow('smash', dataA.smashFactor, dataB.smashFactor, '', true);
+            populateMetricRow('attack', dataA.attackAngle, dataB.attackAngle, '°', null); // context dependent
+            populateMetricRow('path', dataA.clubPath, dataB.clubPath, '°', null); // closer to 0 is neutral
+            populateMetricRow('face', dataA.faceAngle, dataB.faceAngle, '°', null); // closer to 0 is neutral
+            populateMetricRow('height', dataA.height, dataB.height, 'ft', null); // context dependent
+            
+            // Calculate net gains
+            const netCarry = (dataB.carry || 0) - (dataA.carry || 0);
+            const netBallSpeed = (dataB.ballSpeed || 0) - (dataA.ballSpeed || 0);
+            const netSpin = (dataB.spin || 0) - (dataA.spin || 0);
+            
+            // Update net gains section
+            const netGainsSection = document.getElementById('net-gains-section');
+            const netGainsLabel = document.getElementById('net-gains-label');
+            
+            if (bWins) {
+                netGainsSection.style.background = 'var(--green-dim)';
+                netGainsLabel.style.color = 'var(--green)';
+                netGainsLabel.textContent = 'Net Gains with Test Club (B)';
+            } else {
+                netGainsSection.style.background = 'var(--cyan-dim)';
+                netGainsLabel.style.color = 'var(--cyan)';
+                netGainsLabel.textContent = 'Your Club (A) Advantage';
+            }
+            
+            const winnerColor = bWins ? 'var(--green)' : 'var(--cyan)';
+            
+            document.getElementById('net-carry').textContent = formatNetGain(bWins ? netCarry : -netCarry);
+            document.getElementById('net-carry').style.color = winnerColor;
+            
+            document.getElementById('net-ballspeed').textContent = formatNetGain(bWins ? netBallSpeed : -netBallSpeed);
+            document.getElementById('net-ballspeed').style.color = winnerColor;
+            
+            // Hide spin if not provided
+            if (dataA.spin && dataB.spin) {
+                document.getElementById('net-spin-container').style.display = 'block';
+                document.getElementById('net-spin').textContent = formatNetGain(bWins ? netSpin : -netSpin);
+                document.getElementById('net-spin').style.color = winnerColor;
+            } else {
+                document.getElementById('net-spin-container').style.display = 'none';
+            }
+            
+            // Generate AI analysis
+            generateAIAnalysis(dataA, dataB, clubA, clubB, bWins);
+        }
+        
+        function populateMetricRow(metric, valueA, valueB, unit, higherIsBetter) {
+            const row = document.getElementById('row-' + metric);
+            const cellA = document.getElementById('result-' + metric + '-a');
+            const cellB = document.getElementById('result-' + metric + '-b');
+            
+            if (!row || !cellA || !cellB) return;
+            
+            // Show row only if both values exist
+            if (valueA && valueB) {
+                row.style.display = 'flex';
+                
+                const diff = valueB - valueA;
+                const bIsBetter = higherIsBetter === null ? false : (higherIsBetter ? diff > 0 : diff < 0);
+                const aIsBetter = higherIsBetter === null ? false : (higherIsBetter ? diff < 0 : diff > 0);
+                
+                // Format values
+                const decimals = (metric === 'smash') ? 2 : (metric === 'launch' || metric === 'attack') ? 1 : 0;
+                cellA.textContent = valueA.toFixed(decimals) + (unit ? ' ' + unit : '');
+                cellB.textContent = valueB.toFixed(decimals) + (unit ? ' ' + unit : '');
+                
+                // Add arrow and color for winner
+                if (Math.abs(diff) > 0.1) {
+                    if (bIsBetter) {
+                        cellB.style.color = 'var(--green)';
+                        cellB.textContent += diff > 0 ? ' ↑' : ' ↓';
+                        cellA.style.color = '';
+                    } else if (aIsBetter) {
+                        cellA.style.color = 'var(--cyan)';
+                        cellA.textContent += diff < 0 ? ' ↑' : ' ↓';
+                        cellB.style.color = '';
+                    } else {
+                        cellA.style.color = '';
+                        cellB.style.color = '';
+                    }
+                }
+            } else {
+                row.style.display = 'none';
+            }
+        }
+        
+        function formatNetGain(value) {
+            if (value === 0) return '0';
+            const rounded = Math.round(value);
+            return rounded > 0 ? '+' + rounded : rounded.toString();
+        }
+        
+        function generateAIAnalysis(dataA, dataB, clubA, clubB, bWins) {
+            const analysisEl = document.getElementById('ai-analysis-text');
+            
+            const clubAName = `${clubA.brand || ''} ${clubA.model || ''}`.trim() || 'Your Club';
+            const clubBName = clubB.name || 'Test Club';
+            const clubType = clubA.clubType || 'club';
+            
+            const carryDiff = Math.round((dataB.carry || 0) - (dataA.carry || 0));
+            const ballSpeedDiff = Math.round((dataB.ballSpeed || 0) - (dataA.ballSpeed || 0));
+            
+            let analysis = '';
+            
+            if (Math.abs(carryDiff) < 2) {
+                analysis = `The ${clubBName} and your ${clubAName} perform nearly identically in this test. `;
+                analysis += `With only ${Math.abs(carryDiff)} yard${Math.abs(carryDiff) !== 1 ? 's' : ''} difference in carry, the choice comes down to feel and confidence. `;
+                analysis += `Consider testing both clubs in different conditions before making a decision.`;
+            } else if (bWins) {
+                analysis = `The ${clubBName} shows improvement over your current ${clubAName}. `;
+                analysis += `You're gaining ${carryDiff} yards of carry`;
+                if (ballSpeedDiff > 0) {
+                    analysis += ` with ${ballSpeedDiff} mph more ball speed`;
+                }
+                analysis += `. `;
+                
+                if (dataA.spin && dataB.spin) {
+                    const spinDiff = Math.round(dataB.spin - dataA.spin);
+                    if (spinDiff < -200) {
+                        analysis += `The lower spin rate (${Math.abs(spinDiff)} rpm less) is helping maximize distance. `;
+                    } else if (spinDiff > 200) {
+                        analysis += `Note: spin is higher (+${spinDiff} rpm), which may affect performance in windy conditions. `;
+                    }
+                }
+                
+                if (dataA.launch && dataB.launch) {
+                    const launchDiff = (dataB.launch - dataA.launch).toFixed(1);
+                    if (Math.abs(launchDiff) > 1) {
+                        analysis += launchDiff > 0 ? `Higher launch angle (+${launchDiff}°) is optimizing your ball flight. ` : '';
+                    }
+                }
+                
+                analysis += `This is a strong candidate to replace your current ${clubType.toLowerCase()}.`;
+            } else {
+                analysis = `Your ${clubAName} outperforms the ${clubBName} in this test. `;
+                analysis += `You're seeing ${Math.abs(carryDiff)} more yards of carry with your current club`;
+                if (ballSpeedDiff < 0) {
+                    analysis += ` and ${Math.abs(ballSpeedDiff)} mph better ball speed`;
+                }
+                analysis += `. `;
+                analysis += `Keep your current ${clubType.toLowerCase()} - it's well matched to your swing.`;
+            }
+            
+            analysisEl.textContent = analysis;
         }
 
         // Saved Tests Data
