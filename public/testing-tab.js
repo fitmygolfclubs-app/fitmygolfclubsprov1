@@ -202,12 +202,37 @@ const TestingTab = (function() {
       'lw': 36, 'lob wedge': 36, '58': 37, '60': 38 
     };
     
+    // Helper to determine true category (PW, GW, SW, LW should be wedges)
+    function getTrueCategory(club) {
+      const clubType = club.clubType?.toLowerCase() || '';
+      const originalCat = club.category?.toLowerCase() || '';
+      
+      // Wedges: PW, GW, SW, LW, or degree-based wedges
+      if (['pw', 'gw', 'sw', 'lw', 'pitching wedge', 'gap wedge', 'sand wedge', 'lob wedge'].includes(clubType) ||
+          clubType.includes('wedge') || /^\d{2}$/.test(clubType) || /^\d{2}°?$/.test(clubType)) {
+        return 'wedges';
+      }
+      
+      // Woods: Driver, X-Wood
+      if (clubType === 'driver' || clubType.includes('wood') || originalCat === 'woods') {
+        return 'woods';
+      }
+      
+      // Hybrids: XH, X-Hybrid
+      if (clubType.includes('hybrid') || /^\d+h$/i.test(clubType) || originalCat === 'hybrids') {
+        return 'hybrids';
+      }
+      
+      // Default to irons
+      return 'irons';
+    }
+    
     // Group clubs by category for display (case-insensitive)
     const categories = {
-      'Woods': userClubs.filter(c => c.category?.toLowerCase() === 'woods'),
-      'Hybrids': userClubs.filter(c => c.category?.toLowerCase() === 'hybrids'),
-      'Irons': userClubs.filter(c => c.category?.toLowerCase() === 'irons'),
-      'Wedges': userClubs.filter(c => c.category?.toLowerCase() === 'wedges')
+      'Woods': userClubs.filter(c => getTrueCategory(c) === 'woods'),
+      'Hybrids': userClubs.filter(c => getTrueCategory(c) === 'hybrids'),
+      'Irons': userClubs.filter(c => getTrueCategory(c) === 'irons'),
+      'Wedges': userClubs.filter(c => getTrueCategory(c) === 'wedges')
     };
     
     // Sort each category
@@ -302,17 +327,21 @@ const TestingTab = (function() {
       return;
     }
     
-    // Use ClubSelector in 'known-type' mode
+    const clubType = currentTest.clubA?.clubType || 'Driver';
+    const category = currentTest.clubA?.category || 'woods';
+    
+    // Use ClubSelector in 'known-type' mode - locks to same club type
     ClubSelector.open({
       mode: 'known-type',
-      clubType: currentTest.clubA?.clubType || 'Driver',
-      category: currentTest.clubA?.category || 'woods',
-      title: `Select Test Club (${currentTest.clubA?.clubType || 'Club'})`,
+      clubType: clubType,
+      category: category,
+      title: `Select ${clubType} to Compare`,
       onSelect: (result) => {
         currentTest.clubB = {
           brand: result.brand,
           model: result.model,
           name: `${result.brand} ${result.model}`,
+          clubType: clubType, // Same as Club A
           year: result.year,
           clubHeadSpecId: result.clubHeadSpecId,
           shaftBrand: result.shaftBrand,
