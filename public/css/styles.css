@@ -6671,3 +6671,151 @@
             font-weight: 600;
             color: var(--cyan);
         }
+
+/* ============================================
+   TESTING TAB - BANNER CARDS
+   ============================================ */
+
+.banner-cards-container {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    padding: 16px;
+    margin-bottom: 16px;
+    scrollbar-width: thin;
+}
+
+.banner-cards-container::-webkit-scrollbar {
+    height: 6px;
+}
+
+.banner-cards-container::-webkit-scrollbar-track {
+    background: var(--bg-card);
+    border-radius: 3px;
+}
+
+.banner-cards-container::-webkit-scrollbar-thumb {
+    background: var(--border-medium);
+    border-radius: 3px;
+}
+
+.banner-card {
+    min-width: 200px;
+    max-width: 220px;
+    background: var(--bg-card);
+    border: 2px solid var(--border-medium);
+    border-radius: 12px;
+    padding: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    flex-shrink: 0;
+}
+
+.banner-card:hover {
+    border-color: var(--cyan);
+    transform: translateY(-2px);
+}
+
+.banner-card.winner-test {
+    border-color: var(--green);
+    background: var(--green-dim);
+}
+
+.banner-card.winner-yours {
+    border-color: var(--cyan);
+    background: var(--cyan-dim);
+}
+
+.banner-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.banner-card-type {
+    font-size: 10px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.banner-card-date {
+    font-size: 10px;
+    color: var(--text-muted);
+}
+
+.banner-card-title {
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.banner-card-subtitle {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+}
+
+.banner-card-metrics {
+    font-size: 12px;
+    color: var(--green);
+    font-weight: 600;
+}
+
+.banner-card-delete {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: none;
+    border: none;
+    font-size: 12px;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.banner-card:hover .banner-card-delete {
+    opacity: 0.7;
+}
+
+.banner-card-delete:hover {
+    opacity: 1 !important;
+}
+
+.banner-cards-container .empty-state {
+    width: 100%;
+    text-align: center;
+    padding: 24px;
+    background: var(--bg-card);
+    border-radius: 12px;
+}
+
+.empty-icon {
+    font-size: 32px;
+    margin-bottom: 8px;
+}
+
+.empty-text {
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.empty-hint {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+/* Test Club Select Grid */
+#test-club-select-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.club-select-count {
+    font-size: 11px;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
