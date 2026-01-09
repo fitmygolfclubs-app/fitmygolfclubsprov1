@@ -1620,24 +1620,31 @@
                                 <span style="margin-right: 8px;">🔍</span> Select Club from Database
                             </button>
                             
-                            <div style="text-align: center; color: var(--text-muted); margin: 12px 0; font-size: 12px;">— or enter manually —</div>
-                            
-                            <div class="data-input-group" style="margin-bottom: 12px;">
-                                <div class="data-input-label">Brand *</div>
-                                <input type="text" class="data-input" id="compare-brand-manual" placeholder="e.g., TaylorMade" oninput="TestingTab.updateManualCompare()">
+                            <!-- Collapsible Manual Entry -->
+                            <div style="text-align: center; margin: 12px 0;">
+                                <button class="btn btn-ghost" style="font-size: 12px; color: var(--text-muted);" onclick="toggleManualEntry(this)">
+                                    ▼ Enter manually instead
+                                </button>
                             </div>
                             
-                            <div class="data-input-group" style="margin-bottom: 12px;">
-                                <div class="data-input-label">Model *</div>
-                                <input type="text" class="data-input" id="compare-model-manual" placeholder="e.g., Qi10 Max" oninput="TestingTab.updateManualCompare()">
-                            </div>
-                            
-                            <div class="data-input-group" style="margin-bottom: 12px;">
-                                <div class="data-input-label">
-                                    <span>Shaft</span>
-                                    <span class="unit-hint">optional</span>
+                            <div id="manual-entry-fields" style="display: none;">
+                                <div class="data-input-group" style="margin-bottom: 12px;">
+                                    <div class="data-input-label">Brand *</div>
+                                    <input type="text" class="data-input" id="compare-brand-manual" placeholder="e.g., TaylorMade" oninput="TestingTab.updateManualCompare()">
                                 </div>
-                                <input type="text" class="data-input" id="compare-shaft-manual" placeholder="e.g., Fujikura Ventus Blue 6S" oninput="TestingTab.updateManualCompare()">
+                                
+                                <div class="data-input-group" style="margin-bottom: 12px;">
+                                    <div class="data-input-label">Model *</div>
+                                    <input type="text" class="data-input" id="compare-model-manual" placeholder="e.g., Qi10 Max" oninput="TestingTab.updateManualCompare()">
+                                </div>
+                                
+                                <div class="data-input-group" style="margin-bottom: 12px;">
+                                    <div class="data-input-label">
+                                        <span>Shaft</span>
+                                        <span class="unit-hint">optional</span>
+                                    </div>
+                                    <input type="text" class="data-input" id="compare-shaft-manual" placeholder="e.g., Fujikura Ventus Blue 6S" oninput="TestingTab.updateManualCompare()">
+                                </div>
                             </div>
                         </div>
 
@@ -10177,6 +10184,17 @@
             document.getElementById('test-step-' + step).classList.add('active');
             
             perfTestState.currentStep = step;
+        }
+
+        function toggleManualEntry(btn) {
+            const fields = document.getElementById('manual-entry-fields');
+            if (fields.style.display === 'none') {
+                fields.style.display = 'block';
+                btn.innerHTML = '▲ Hide manual entry';
+            } else {
+                fields.style.display = 'none';
+                btn.innerHTML = '▼ Enter manually instead';
+            }
         }
 
         function cancelPerfTest() {

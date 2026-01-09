@@ -347,7 +347,7 @@ const ClubSelector = (function() {
           width: 100%;
           max-width: 480px;
           max-height: 90vh;
-          overflow: hidden;
+          overflow: visible;
           display: flex;
           flex-direction: column;
           box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
@@ -384,7 +384,9 @@ const ClubSelector = (function() {
         .cs-modal-body {
           padding: 20px;
           overflow-y: auto;
+          overflow-x: visible;
           flex: 1;
+          max-height: calc(90vh - 140px);
         }
 
         /* Step Indicator */
@@ -507,6 +509,7 @@ const ClubSelector = (function() {
         /* Sections */
         .cs-section {
           margin-bottom: 20px;
+          overflow: visible;
         }
         .cs-label {
           display: block;
@@ -550,12 +553,12 @@ const ClubSelector = (function() {
           background: #252a38;
           border: 1px solid #333;
           border-radius: 8px;
-          max-height: 200px;
+          max-height: 250px;
           overflow-y: auto;
           display: none;
-          z-index: 1000;
+          z-index: 10001;
           margin-top: 4px;
-          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
         }
         .cs-dropdown.show {
           display: block;
