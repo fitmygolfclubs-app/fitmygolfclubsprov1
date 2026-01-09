@@ -1,0 +1,2033 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FitMyGolfClubs Pro Admin</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --navy: #1a1d29;
+            --blue: #00d4ff;
+            --white: #ffffff;
+            --gray-light: #999999;
+            --gray-dark: #2a3040;
+            --success: #00c853;
+            --warning: #ffd600;
+            --error: #d32f2f;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--navy);
+            color: var(--white);
+            line-height: 1.6;
+        }
+
+        /* Login Section */
+        #loginSection {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-card {
+            background: var(--gray-dark);
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 8px 30px rgba(0, 212, 255, 0.1);
+            max-width: 400px;
+            width: 100%;
+        }
+
+        .login-card h1 {
+            color: var(--blue);
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .login-card p {
+            color: var(--gray-light);
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--gray-light);
+            font-size: 14px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            background: var(--navy);
+            border: 1px solid var(--gray-light);
+            border-radius: 8px;
+            color: var(--white);
+            font-size: 16px;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--blue);
+            box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: var(--blue);
+            color: var(--navy);
+            width: 100%;
+        }
+
+        .btn-primary:hover {
+            background: #33ddff;
+            box-shadow: 0 4px 20px rgba(0, 212, 255, 0.3);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--blue);
+            border: 2px solid var(--blue);
+        }
+
+        .btn-secondary:hover {
+            background: var(--blue);
+            color: var(--navy);
+        }
+
+        .btn-danger {
+            background: var(--error);
+            color: var(--white);
+        }
+
+        .error-message {
+            color: var(--error);
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        /* Admin Panel */
+        #adminPanel {
+            display: none;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: var(--gray-dark);
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header h1 {
+            color: var(--blue);
+            font-size: 24px;
+        }
+
+        .header .user-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .header .user-email {
+            color: var(--gray-light);
+            font-size: 14px;
+        }
+
+        .env-badge {
+            background: var(--warning);
+            color: var(--navy);
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        /* Navigation */
+        .nav-menu {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 280px;
+            height: 100vh;
+            background: var(--gray-dark);
+            padding: 20px;
+            transform: translateX(-100%);
+            transition: transform 0.3s;
+            z-index: 200;
+            overflow-y: auto;
+        }
+
+        .nav-menu.open {
+            transform: translateX(0);
+        }
+
+        .nav-menu h3 {
+            color: var(--blue);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--gray-light);
+        }
+
+        .nav-menu a {
+            display: block;
+            color: var(--white);
+            text-decoration: none;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 4px;
+            transition: background 0.2s;
+        }
+
+        .nav-menu a:hover {
+            background: var(--navy);
+        }
+
+        .nav-toggle {
+            position: fixed;
+            left: 20px;
+            top: 90px;
+            background: var(--blue);
+            color: var(--navy);
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            cursor: pointer;
+            z-index: 150;
+            font-size: 20px;
+        }
+
+        .nav-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            z-index: 150;
+        }
+
+        .nav-overlay.open {
+            display: block;
+        }
+
+        .content {
+            padding: 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section {
+            background: var(--gray-dark);
+            padding: 30px;
+            border-radius: 16px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 20px rgba(0, 212, 255, 0.05);
+        }
+
+        .section h2 {
+            color: var(--blue);
+            margin-bottom: 20px;
+            font-size: 22px;
+            border-bottom: 2px solid var(--blue);
+            padding-bottom: 10px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .section h2::after {
+            content: '▼';
+            font-size: 14px;
+            transition: transform 0.3s;
+        }
+
+        .section.collapsed h2::after {
+            transform: rotate(-90deg);
+        }
+
+        .section.collapsed .section-content {
+            display: none;
+        }
+
+        .section-description {
+            color: var(--gray-light);
+            margin-bottom: 25px;
+            font-size: 14px;
+        }
+
+        .config-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .config-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .config-item label {
+            color: var(--white);
+            margin-bottom: 8px;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .config-item small {
+            color: var(--gray-light);
+            font-size: 12px;
+            margin-bottom: 8px;
+        }
+
+        .config-item input,
+        .config-item select {
+            padding: 10px;
+            background: var(--navy);
+            border: 1px solid var(--gray-light);
+            border-radius: 8px;
+            color: var(--white);
+            font-size: 14px;
+        }
+
+        .config-item input:focus,
+        .config-item select:focus {
+            outline: none;
+            border-color: var(--blue);
+        }
+
+        .config-item textarea {
+            padding: 12px;
+            background: var(--navy);
+            border: 1px solid var(--gray-light);
+            border-radius: 8px;
+            color: var(--white);
+            font-size: 14px;
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .weight-total {
+            margin-top: 20px;
+            padding: 15px;
+            background: var(--navy);
+            border-radius: 8px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .weight-total.valid {
+            color: var(--success);
+        }
+
+        .weight-total.invalid {
+            color: var(--error);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+        }
+
+        .success-message {
+            background: var(--success);
+            color: var(--white);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        /* Engine Mode Cards */
+        .engine-options {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .engine-card {
+            flex: 1;
+            min-width: 200px;
+            padding: 20px;
+            background: var(--navy);
+            border: 2px solid var(--gray-light);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .engine-card:hover {
+            border-color: var(--blue);
+        }
+
+        .engine-card.selected {
+            border-color: var(--blue);
+            background: rgba(0, 212, 255, 0.1);
+        }
+
+        .engine-card h4 {
+            color: var(--white);
+            margin-bottom: 8px;
+        }
+
+        .engine-card p {
+            color: var(--gray-light);
+            font-size: 13px;
+        }
+
+        /* Rule Cards */
+        .rule-card {
+            background: var(--navy);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border: 1px solid var(--gray-light);
+        }
+
+        .rule-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .rule-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--white);
+        }
+
+        .rule-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 26px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--gray-light);
+            transition: .4s;
+            border-radius: 26px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: var(--blue);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(24px);
+        }
+
+        .rule-text {
+            color: var(--gray-light);
+            line-height: 1.6;
+        }
+
+        /* User Cards */
+        .user-card {
+            background: var(--navy);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .user-info-card {
+            flex: 1;
+        }
+
+        .user-email-display {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--white);
+        }
+
+        .user-badges {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            background: var(--blue);
+            color: var(--navy);
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .badge.primary {
+            background: var(--success);
+            color: var(--white);
+        }
+
+        /* Firebase Tools Grid */
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .tool-card {
+            background: var(--navy);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            text-decoration: none;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .tool-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 30px rgba(0, 212, 255, 0.2);
+        }
+
+        .tool-card .icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+        }
+
+        .tool-card h4 {
+            color: var(--white);
+            margin-bottom: 8px;
+        }
+
+        .tool-card p {
+            color: var(--gray-light);
+            font-size: 12px;
+        }
+
+        /* Version Info */
+        .version-card {
+            background: var(--navy);
+            padding: 20px;
+            border-radius: 12px;
+            border: 2px solid var(--blue);
+            margin-bottom: 20px;
+        }
+
+        .version-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .version-number {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--white);
+        }
+
+        .version-status {
+            color: var(--success);
+            font-weight: 600;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .metric-card {
+            background: var(--gray-dark);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .metric-value {
+            font-size: 28px;
+            font-weight: 600;
+            color: var(--blue);
+        }
+
+        .metric-label {
+            color: var(--gray-light);
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        /* Loading */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: var(--white);
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header {
+                padding: 15px 20px;
+            }
+            .content {
+                padding: 20px;
+            }
+            .config-grid {
+                grid-template-columns: 1fr;
+            }
+            .button-group {
+                flex-direction: column;
+            }
+            .metrics-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Section -->
+    <div id="loginSection">
+        <div class="login-card">
+            <h1>🏌️ FitMyGolfClubs Pro</h1>
+            <p>Admin Panel - Development Environment</p>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="loginEmail" placeholder="admin@fitmygolfclubs.com">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="loginPassword" placeholder="••••••••">
+            </div>
+            <button class="btn btn-primary" onclick="login()">Sign In</button>
+            <div id="loginError" class="error-message"></div>
+            <div id="resetSuccess" class="success-message" style="background: var(--success);">Password reset email sent! Check your inbox.</div>
+            <p style="text-align: center; margin-top: 20px;">
+                <a href="#" onclick="forgotPassword(); return false;" style="color: var(--blue); text-decoration: none;">Forgot Password?</a>
+            </p>
+        </div>
+    </div>
+
+    <!-- Admin Panel -->
+    <div id="adminPanel">
+        <header class="header">
+            <h1>⚙️ FitMyGolfClubs Pro Admin</h1>
+            <div class="user-info">
+                <span class="env-badge">DEV</span>
+                <span class="user-email" id="userEmail"></span>
+            </div>
+        </header>
+
+        <button class="nav-toggle" onclick="toggleNav()">☰</button>
+        <div class="nav-overlay" onclick="toggleNav()"></div>
+        <nav class="nav-menu">
+            <h3>Sections</h3>
+            <a href="#section1">1. Grading Algorithm</a>
+            <a href="#section2">2. Grade Thresholds</a>
+            <a href="#section3">3. Age Scoring</a>
+            <a href="#section4">4. Outlier Removal</a>
+            <a href="#section5">5. Claude AI Settings</a>
+            <a href="#section6">6. AI Rules</a>
+            <a href="#section7">7. Subscription Settings</a>
+            <a href="#section8">8. User Management</a>
+            <a href="#section9">9. Firebase Tools</a>
+            <a href="#section10">10. Algorithm Version</a>
+        </nav>
+
+        <div class="content">
+            <!-- Section 1: Grading Algorithm -->
+            <div class="section" id="section1">
+                <h2 onclick="toggleSection(this)">1. Grading Algorithm</h2>
+                <div class="section-content">
+                    <p class="section-description">Configure the grading engine mode and factor weights. Weights must total 100%.</p>
+                    
+                    <h4 style="color: var(--blue); margin-bottom: 15px;">Grading Engine Mode</h4>
+                    <div class="engine-options">
+                        <div class="engine-card" data-engine="javascript" onclick="selectEngine('javascript')">
+                            <h4>⚡ JavaScript Only</h4>
+                            <p>Fast, deterministic. Uses hardcoded thresholds for each factor.</p>
+                        </div>
+                        <div class="engine-card selected" data-engine="hybrid" onclick="selectEngine('hybrid')">
+                            <h4>🔄 JavaScript + Claude Review</h4>
+                            <p>JS calculates first, Claude reviews and adjusts (±15 pts max). Best of both.</p>
+                        </div>
+                        <div class="engine-card" data-engine="claude" onclick="selectEngine('claude')">
+                            <h4>🤖 Claude Only</h4>
+                            <p>Claude scores all factors from raw data. More contextual, slower, costs tokens.</p>
+                        </div>
+                    </div>
+                    <input type="hidden" id="grading_engine" value="hybrid">
+
+                    <h4 style="color: var(--blue); margin: 25px 0 15px;">Factor Weights</h4>
+                    <div class="config-grid">
+                        <div class="config-item">
+                            <label>Age Weight</label>
+                            <small>How much club age affects overall grade</small>
+                            <input type="number" id="age_weight" min="0" max="100" value="20">
+                        </div>
+                        <div class="config-item">
+                            <label>Weight Progression</label>
+                            <small>Shaft weight consistency across bag</small>
+                            <input type="number" id="weight_progression_weight" min="0" max="100" value="15">
+                        </div>
+                        <div class="config-item">
+                            <label>Loft Gapping</label>
+                            <small>Proper distance gaps between clubs</small>
+                            <input type="number" id="loft_gapping_weight" min="0" max="100" value="20">
+                        </div>
+                        <div class="config-item">
+                            <label>Flex Consistency</label>
+                            <small>All shafts have same flex rating</small>
+                            <input type="number" id="flex_consistency_weight" min="0" max="100" value="10">
+                        </div>
+                        <div class="config-item">
+                            <label>Kickpoint Consistency</label>
+                            <small>All shafts have same kickpoint</small>
+                            <input type="number" id="kickpoint_consistency_weight" min="0" max="100" value="10">
+                        </div>
+                        <div class="config-item">
+                            <label>Torque Consistency</label>
+                            <small>Similar torque across all shafts</small>
+                            <input type="number" id="torque_consistency_weight" min="0" max="100" value="5">
+                        </div>
+                        <div class="config-item">
+                            <label>Length Progression</label>
+                            <small>Clubs follow standard length specs</small>
+                            <input type="number" id="length_progression_weight" min="0" max="100" value="10">
+                        </div>
+                        <div class="config-item">
+                            <label>Lie Angle Progression</label>
+                            <small>Lie angles progress properly</small>
+                            <input type="number" id="lie_angle_progression_weight" min="0" max="100" value="10">
+                        </div>
+                    </div>
+
+                    <div id="weightTotal" class="weight-total valid">Total: 100%</div>
+
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="saveGradingWeights()">Save Weights</button>
+                        <button class="btn btn-secondary" onclick="resetGradingWeights()">Reset to Defaults</button>
+                    </div>
+                    <div id="weightSuccess" class="success-message">Grading weights saved successfully!</div>
+                </div>
+            </div>
+
+            <!-- Section 2: Letter Grade Thresholds -->
+            <div class="section" id="section2">
+                <h2 onclick="toggleSection(this)">2. Letter Grade Thresholds</h2>
+                <div class="section-content">
+                    <p class="section-description">Set the score cutoffs for each letter grade.</p>
+                    
+                    <div class="config-grid">
+                        <div class="config-item">
+                            <label>A Grade Threshold</label>
+                            <small>Score needed for A- or better</small>
+                            <input type="number" id="grade_a_threshold" min="0" max="100" value="90">
+                        </div>
+                        <div class="config-item">
+                            <label>B Grade Threshold</label>
+                            <small>Score needed for B- or better</small>
+                            <input type="number" id="grade_b_threshold" min="0" max="100" value="80">
+                        </div>
+                        <div class="config-item">
+                            <label>C Grade Threshold</label>
+                            <small>Score needed for C- or better</small>
+                            <input type="number" id="grade_c_threshold" min="0" max="100" value="70">
+                        </div>
+                        <div class="config-item">
+                            <label>D Grade Threshold</label>
+                            <small>Score needed for D or better</small>
+                            <input type="number" id="grade_d_threshold" min="0" max="100" value="60">
+                        </div>
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="saveThresholds()">Save Thresholds</button>
+                    </div>
+                    <div id="thresholdSuccess" class="success-message">Grade thresholds saved successfully!</div>
+                </div>
+            </div>
+
+            <!-- Section 3: Age Scoring Tiers -->
+            <div class="section" id="section3">
+                <h2 onclick="toggleSection(this)">3. Age Scoring Tiers</h2>
+                <div class="section-content">
+                    <p class="section-description">Set the score for each club age. One year = one grade level drop.</p>
+                    
+                    <div class="config-grid">
+                        <div class="config-item">
+                            <label>Year 1 (A+)</label>
+                            <small>Brand new / 1 year old</small>
+                            <input type="number" id="age_score_1" min="0" max="100" value="97">
+                        </div>
+                        <div class="config-item">
+                            <label>Year 2 (A)</label>
+                            <small>2 years old</small>
+                            <input type="number" id="age_score_2" min="0" max="100" value="93">
+                        </div>
+                        <div class="config-item">
+                            <label>Year 3 (A-)</label>
+                            <small>3 years old</small>
+                            <input type="number" id="age_score_3" min="0" max="100" value="90">
+                        </div>
+                        <div class="config-item">
+                            <label>Year 4 (B+)</label>
+                            <small>4 years old</small>
+                            <input type="number" id="age_score_4" min="0" max="100" value="87">
+                        </div>
+                        <div class="config-item">
+                            <label>Year 5 (B)</label>
+                            <small>5 years old</small>
+                            <input type="number" id="age_score_5" min="0" max="100" value="83">
+                        </div>
+                        <div class="config-item">
+                            <label>Year 6 (B-)</label>
+                            <small>6 years old</small>
+                            <input type="number" id="age_score_6" min="0" max="100" value="80">
+                        </div>
+                        <div class="config-item">
+                            <label>Year 7 (C+)</label>
+                            <small>7 years old</small>
+                            <input type="number" id="age_score_7" min="0" max="100" value="77">
+                        </div>
+                        <div class="config-item">
+                            <label>Year 8 (C)</label>
+                            <small>8 years old</small>
+                            <input type="number" id="age_score_8" min="0" max="100" value="73">
+                        </div>
+                        <div class="config-item">
+                            <label>Year 9 (C-)</label>
+                            <small>9 years old</small>
+                            <input type="number" id="age_score_9" min="0" max="100" value="70">
+                        </div>
+                        <div class="config-item">
+                            <label>Year 10 (D+)</label>
+                            <small>10 years old</small>
+                            <input type="number" id="age_score_10" min="0" max="100" value="67">
+                        </div>
+                        <div class="config-item">
+                            <label>Year 11 (D)</label>
+                            <small>11 years old</small>
+                            <input type="number" id="age_score_11" min="0" max="100" value="63">
+                        </div>
+                        <div class="config-item">
+                            <label>Year 12 (D-)</label>
+                            <small>12 years old</small>
+                            <input type="number" id="age_score_12" min="0" max="100" value="60">
+                        </div>
+                        <div class="config-item">
+                            <label>Year 13+ (F)</label>
+                            <small>13+ years old</small>
+                            <input type="number" id="age_score_13" min="0" max="100" value="55">
+                        </div>
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="saveAgeScoring()">Save Age Scoring</button>
+                    </div>
+                    <div id="ageScoreSuccess" class="success-message">Age scoring tiers saved successfully!</div>
+                </div>
+            </div>
+
+            <!-- Section 4: Outlier Removal Algorithm -->
+            <div class="section" id="section4">
+                <h2 onclick="toggleSection(this)">4. Outlier Removal Algorithm</h2>
+                <div class="section-content">
+                    <p class="section-description">Configure how performance data outliers are removed based on handicap.</p>
+                    
+                    <div class="config-grid">
+                        <div class="config-item">
+                            <label>Minimum Outlier %</label>
+                            <small>Minimum percentage for scratch golfers</small>
+                            <input type="number" id="minimum_outlier_percentage" min="0" max="1" step="0.01" value="0.05">
+                        </div>
+                        <div class="config-item">
+                            <label>Maximum Outlier %</label>
+                            <small>Maximum percentage for high handicappers</small>
+                            <input type="number" id="maximum_outlier_percentage" min="0" max="1" step="0.01" value="0.35">
+                        </div>
+                        <div class="config-item">
+                            <label>Outlier Multiplier</label>
+                            <small>Multiplier for handicap-based calculation</small>
+                            <input type="number" id="outlier_percentage_multiplier" min="0" max="5" step="0.1" value="1">
+                        </div>
+                        <div class="config-item">
+                            <label>Scratch Golfer %</label>
+                            <small>Outlier % for 0 handicap</small>
+                            <input type="number" id="scratch_golfer_outlier_percentage" min="0" max="1" step="0.01" value="0.05">
+                        </div>
+                        <div class="config-item">
+                            <label>High Handicap %</label>
+                            <small>Outlier % for 36+ handicap</small>
+                            <input type="number" id="high_handicap_outlier_percentage" min="0" max="1" step="0.01" value="0.35">
+                        </div>
+                        <div class="config-item">
+                            <label>Base Formula</label>
+                            <small>How outlier % is calculated</small>
+                            <select id="outlier_removal_base_formula">
+                                <option value="handicap_divided_by_72">Handicap ÷ 72</option>
+                                <option value="linear">Linear Scale</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="saveOutlierSettings()">Save Outlier Settings</button>
+                    </div>
+                    <div id="outlierSuccess" class="success-message">Outlier settings saved successfully!</div>
+                </div>
+            </div>
+
+            <!-- Section 5: Claude AI Settings -->
+            <div class="section" id="section5">
+                <h2 onclick="toggleSection(this)">5. Claude AI Settings</h2>
+                <div class="section-content">
+                    <p class="section-description">Configure AI recommendation behavior and limits.</p>
+                    
+                    <div class="config-grid">
+                        <div class="config-item">
+                            <label>AI Enabled</label>
+                            <small>Enable/disable AI recommendations</small>
+                            <select id="ai_recommendations_enabled">
+                                <option value="true">Enabled</option>
+                                <option value="false">Disabled</option>
+                            </select>
+                        </div>
+                        <div class="config-item">
+                            <label>Claude Model</label>
+                            <small>AI model to use</small>
+                            <input type="text" id="claude_model" value="claude-sonnet-4-20250514">
+                        </div>
+                        <div class="config-item">
+                            <label>Max Tokens</label>
+                            <small>Maximum response length</small>
+                            <input type="number" id="claude_max_tokens" min="500" max="4000" value="2000">
+                        </div>
+                        <div class="config-item">
+                            <label>Tone</label>
+                            <small>AI response tone</small>
+                            <select id="claude_tone">
+                                <option value="encouraging_professional">Encouraging Professional</option>
+                                <option value="technical">Technical</option>
+                                <option value="casual">Casual</option>
+                                <option value="formal">Formal</option>
+                            </select>
+                        </div>
+                        <div class="config-item">
+                            <label>Technical Detail Level</label>
+                            <small>Complexity of explanations</small>
+                            <select id="claude_technical_detail_level">
+                                <option value="basic">Basic</option>
+                                <option value="moderate">Moderate</option>
+                                <option value="advanced">Advanced</option>
+                            </select>
+                        </div>
+                        <div class="config-item">
+                            <label>Response Length Target</label>
+                            <small>Desired response length</small>
+                            <input type="text" id="claude_response_length_target" value="200-400 words">
+                        </div>
+                        <div class="config-item">
+                            <label>Emphasis Positive</label>
+                            <small>Focus on strengths first</small>
+                            <select id="claude_emphasis_positive">
+                                <option value="true">Yes</option>
+                                <option value="false">No</option>
+                            </select>
+                        </div>
+                        <div class="config-item">
+                            <label>Handicap Sensitive</label>
+                            <small>Adjust language by skill level</small>
+                            <select id="claude_handicap_sensitivity">
+                                <option value="true">Yes</option>
+                                <option value="false">No</option>
+                            </select>
+                        </div>
+                        <div class="config-item">
+                            <label>Include Product Recommendations</label>
+                            <small>Show affiliate links</small>
+                            <select id="claude_include_product_recommendations">
+                                <option value="false">No (Default)</option>
+                                <option value="true">Yes</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <h4 style="color: var(--blue); margin: 30px 0 15px 0;">Score Adjustment Settings</h4>
+                    <div class="config-grid">
+                        <div class="config-item">
+                            <label>Adjustment Cap (±points)</label>
+                            <small>Max points Claude can adjust any factor</small>
+                            <input type="number" id="claude_adjustment_cap" min="5" max="25" value="15">
+                        </div>
+                        <div class="config-item">
+                            <label>Sales Opportunities Enabled</label>
+                            <small>Include sales suggestions in analysis</small>
+                            <select id="claude_sales_opportunities_enabled">
+                                <option value="true">Yes</option>
+                                <option value="false">No</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <h4 style="color: var(--blue); margin: 30px 0 15px 0;">Recommendation Settings</h4>
+                    <div class="config-grid">
+                        <div class="config-item">
+                            <label>Year Range Min</label>
+                            <small>Oldest year for club recommendations</small>
+                            <input type="number" id="claude_year_range_min" min="2018" max="2030" value="2023">
+                        </div>
+                        <div class="config-item">
+                            <label>Year Range Max</label>
+                            <small>Newest year for club recommendations</small>
+                            <input type="number" id="claude_year_range_max" min="2020" max="2030" value="2025">
+                        </div>
+                    </div>
+
+                    <h4 style="color: var(--blue); margin: 30px 0 15px 0;">Factor Guidance (Claude Prompt Instructions)</h4>
+                    <p class="section-description" style="margin-bottom: 15px;">These instructions tell Claude how to evaluate each factor.</p>
+                    <div class="config-grid">
+                        <div class="config-item">
+                            <label>Age Guidance</label>
+                            <small>How to evaluate club age</small>
+                            <input type="text" id="claude_guidance_age" value="putters age well, drivers don't">
+                        </div>
+                        <div class="config-item">
+                            <label>Weight Guidance</label>
+                            <small>Expected shaft weight progression</small>
+                            <input type="text" id="claude_guidance_weight" value="50-60g driver through 100-130g wedges">
+                        </div>
+                        <div class="config-item">
+                            <label>Loft Guidance</label>
+                            <small>Expected loft gaps</small>
+                            <input type="text" id="claude_guidance_loft" value="~4° gaps between clubs">
+                        </div>
+                        <div class="config-item">
+                            <label>Flex Guidance</label>
+                            <small>How to evaluate flex consistency</small>
+                            <input type="text" id="claude_guidance_flex" value="NO industry standard - check label consistency only">
+                        </div>
+                        <div class="config-item">
+                            <label>Kickpoint Guidance</label>
+                            <small>Kickpoint evaluation notes</small>
+                            <input type="text" id="claude_guidance_kickpoint" value="High = lower flight, Low = higher flight">
+                        </div>
+                        <div class="config-item">
+                            <label>Torque Guidance</label>
+                            <small>Torque evaluation notes</small>
+                            <input type="text" id="claude_guidance_torque" value="Lower torque = more control">
+                        </div>
+                        <div class="config-item">
+                            <label>Length Guidance</label>
+                            <small>Expected length progression</small>
+                            <input type="text" id="claude_guidance_length" value="~0.5 inch decrease per club">
+                        </div>
+                        <div class="config-item">
+                            <label>Lie Angle Guidance</label>
+                            <small>Lie angle evaluation notes</small>
+                            <input type="text" id="claude_guidance_lie" value="~1° progression between clubs">
+                        </div>
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="saveClaudeSettings()">Save AI Settings</button>
+                    </div>
+                    <div id="claudeSuccess" class="success-message">AI settings saved successfully!</div>
+                </div>
+            </div>
+
+            <!-- Section 6: AI Recommendation Rules -->
+            <div class="section" id="section6">
+                <h2 onclick="toggleSection(this)">6. AI Recommendation Rules</h2>
+                <div class="section-content">
+                    <p class="section-description">Add custom rules that guide AI recommendations. These are sent to Claude with each request.</p>
+                    
+                    <div id="rulesList">
+                        <!-- Rules loaded dynamically -->
+                    </div>
+
+                    <button class="btn btn-primary" onclick="showAddRuleForm()" style="margin-top: 20px;">+ Add New Rule</button>
+
+                    <div id="addRuleForm" style="display:none; margin-top: 20px; background: var(--navy); padding: 20px; border-radius: 8px;">
+                        <div class="config-item">
+                            <label>Rule Name</label>
+                            <input type="text" id="newRuleName" placeholder="e.g., Brand Consistency">
+                        </div>
+                        <div class="config-item" style="margin-top: 15px;">
+                            <label>Priority (1 = highest)</label>
+                            <input type="number" id="newRulePriority" min="1" max="100" value="1">
+                        </div>
+                        <div class="config-item" style="margin-top: 15px;">
+                            <label>Rule Text</label>
+                            <textarea id="newRuleText" placeholder="Write the rule in plain English..."></textarea>
+                        </div>
+                        <div class="button-group">
+                            <button class="btn btn-primary" onclick="saveNewRule()">Save Rule</button>
+                            <button class="btn btn-secondary" onclick="cancelAddRule()">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 7: Subscription Settings -->
+            <div class="section" id="section7">
+                <h2 onclick="toggleSection(this)">7. Subscription Settings</h2>
+                <div class="section-content">
+                    <p class="section-description">Configure subscription pricing and trial settings.</p>
+                    
+                    <div class="config-grid">
+                        <div class="config-item">
+                            <label>Monthly Price ($)</label>
+                            <small>Price per month</small>
+                            <input type="number" id="subscription_monthly_price" min="0" max="100" step="0.01" value="9.99">
+                        </div>
+                        <div class="config-item">
+                            <label>Annual Price ($)</label>
+                            <small>Price per year</small>
+                            <input type="number" id="subscription_annual_price" min="0" max="500" step="1" value="99">
+                        </div>
+                        <div class="config-item">
+                            <label>Trial Duration (days)</label>
+                            <small>Free trial length</small>
+                            <input type="number" id="trial_duration_days" min="0" max="90" value="14">
+                        </div>
+                        <div class="config-item">
+                            <label>Free Tier Limit (clubs/month)</label>
+                            <small>Free users can analyze X clubs per month</small>
+                            <input type="number" id="free_tier_test_clubs_per_month" min="0" max="10" value="1">
+                        </div>
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="saveSubscriptionSettings()">Save Subscription Settings</button>
+                    </div>
+                    <div id="subscriptionSuccess" class="success-message">Subscription settings saved successfully!</div>
+                </div>
+            </div>
+
+            <!-- Section 8: User Management -->
+            <div class="section" id="section8">
+                <h2 onclick="toggleSection(this)">8. User Management</h2>
+                <div class="section-content">
+                    <p class="section-description">Manage admin users and their permissions.</p>
+                    
+                    <div id="adminUsersList">
+                        <!-- Users loaded dynamically -->
+                    </div>
+
+                    <button class="btn btn-primary" onclick="showAddAdminForm()" style="margin-top: 20px;">+ Add New User</button>
+
+                    <div id="addAdminForm" style="display:none; margin-top: 20px; background: var(--navy); padding: 20px; border-radius: 8px;">
+                        <div class="config-item">
+                            <label>Email Address</label>
+                            <input type="email" id="newAdminEmail" placeholder="admin@example.com">
+                        </div>
+                        <div style="margin-top: 15px;">
+                            <label style="color: var(--white); font-weight: 600; display: block; margin-bottom: 10px;">Permissions</label>
+                            <div style="display: grid; gap: 10px;">
+                                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                                    <input type="checkbox" id="perm_configuration" checked>
+                                    <span>Configuration - Grading, AI Settings, Subscriptions</span>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                                    <input type="checkbox" id="perm_analytics" checked>
+                                    <span>Analytics - Usage metrics, Revenue dashboard</span>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                                    <input type="checkbox" id="perm_userFeedback" checked>
+                                    <span>User Feedback - Support tickets, Feature requests</span>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                                    <input type="checkbox" id="perm_systemAdmin" checked>
+                                    <span>System Admin - Full admin access</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="button-group">
+                            <button class="btn btn-primary" onclick="saveNewAdmin()">Add User</button>
+                            <button class="btn btn-secondary" onclick="cancelAddAdmin()">Cancel</button>
+                        </div>
+                    </div>
+                    <div id="adminUserSuccess" class="success-message">User updated successfully!</div>
+                </div>
+            </div>
+
+            <!-- Section 9: Firebase Tools -->
+            <div class="section" id="section9">
+                <h2 onclick="toggleSection(this)">9. Firebase Tools & Quick Access</h2>
+                <div class="section-content">
+                    <p class="section-description">Quick links to Firebase console tools.</p>
+                    
+                    <div class="tools-grid">
+                        <a href="https://console.firebase.google.com/project/fitmygolfclubs-pro-dev/analytics" target="_blank" class="tool-card">
+                            <div class="icon">📊</div>
+                            <h4>Analytics Dashboard</h4>
+                            <p>User behavior and engagement</p>
+                        </a>
+                        <a href="https://console.firebase.google.com/project/fitmygolfclubs-pro-dev/crashlytics" target="_blank" class="tool-card">
+                            <div class="icon">💥</div>
+                            <h4>Crashlytics</h4>
+                            <p>App crashes and errors</p>
+                        </a>
+                        <a href="https://console.firebase.google.com/project/fitmygolfclubs-pro-dev/performance" target="_blank" class="tool-card">
+                            <div class="icon">⚡</div>
+                            <h4>Performance</h4>
+                            <p>App speed and latency</p>
+                        </a>
+                        <a href="https://console.firebase.google.com/project/fitmygolfclubs-pro-dev/firestore" target="_blank" class="tool-card">
+                            <div class="icon">🔥</div>
+                            <h4>Firestore Database</h4>
+                            <p>Browse collections</p>
+                        </a>
+                        <a href="https://console.firebase.google.com/project/fitmygolfclubs-pro-dev/storage" target="_blank" class="tool-card">
+                            <div class="icon">📁</div>
+                            <h4>Storage</h4>
+                            <p>User photos and files</p>
+                        </a>
+                        <a href="https://console.firebase.google.com/project/fitmygolfclubs-pro-dev/functions" target="_blank" class="tool-card">
+                            <div class="icon">⚙️</div>
+                            <h4>Cloud Functions</h4>
+                            <p>Function logs and execution</p>
+                        </a>
+                        <a href="https://console.firebase.google.com/project/fitmygolfclubs-pro-dev/authentication/users" target="_blank" class="tool-card">
+                            <div class="icon">👤</div>
+                            <h4>Authentication</h4>
+                            <p>User accounts</p>
+                        </a>
+                        <a href="https://console.cloud.google.com/logs/query?project=fitmygolfclubs-pro-dev" target="_blank" class="tool-card">
+                            <div class="icon">📋</div>
+                            <h4>Cloud Logs</h4>
+                            <p>Detailed function logs</p>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 10: Algorithm Version Management -->
+            <div class="section" id="section10">
+                <h2 onclick="toggleSection(this)">10. Algorithm Version Management</h2>
+                <div class="section-content">
+                    <p class="section-description">View and manage the active grading algorithm version.</p>
+                    
+                    <div class="version-card">
+                        <div class="version-header">
+                            <div>
+                                <div class="version-number" id="versionNumber">v2.0</div>
+                                <span class="version-status" id="versionStatus">Active</span>
+                            </div>
+                            <div style="text-align: right; color: var(--gray-light); font-size: 14px;">
+                                <div>Deployed by: <span id="deployedBy">-</span></div>
+                                <div>Last updated: <span id="deployedAt">-</span></div>
+                            </div>
+                        </div>
+                        <div style="color: var(--gray-light); font-size: 14px;">
+                            <strong>Changelog:</strong> <span id="versionChangelog">-</span>
+                        </div>
+                    </div>
+
+                    <h4 style="color: var(--blue); margin: 20px 0 15px;">📈 Performance Metrics</h4>
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <div class="metric-value" id="totalAnalyses">0</div>
+                            <div class="metric-label">Total Analyses</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value" id="averageGrade">--</div>
+                            <div class="metric-label">Avg Grade</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value" id="userSatisfaction">--</div>
+                            <div class="metric-label">User Satisfaction</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value" id="successRate">--</div>
+                            <div class="metric-label">Success Rate</div>
+                        </div>
+                    </div>
+
+                    <h4 style="color: var(--blue); margin: 25px 0 15px;">🎚️ Active Grading Weights</h4>
+                    <div id="activeWeightsDisplay" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">
+                        <!-- Weights displayed dynamically -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+    <script>
+        // Firebase Configuration - PRO DEV
+        const firebaseConfig = {
+            apiKey: "AIzaSyCvoxmCGM0tizJmj5y_nsD2GQP081XeoBA",
+            authDomain: "fitmygolfclubs-pro-dev.firebaseapp.com",
+            projectId: "fitmygolfclubs-pro-dev",
+            storageBucket: "fitmygolfclubs-pro-dev.firebasestorage.app",
+            messagingSenderId: "663221768630",
+            appId: "1:663221768630:web:12665157659964023df117"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        let allowedAdmins = [];
+
+        // ===== AUTHENTICATION =====
+        // No login required - show admin panel directly
+        document.getElementById('loginSection').style.display = 'none';
+        document.getElementById('adminPanel').style.display = 'block';
+        document.getElementById('userEmail').textContent = 'Admin';
+        loadAllConfig();
+
+        async function loadAllowedAdmins() {
+            try {
+                const configDoc = await db.collection('config').doc('appSettings').get();
+                if (configDoc.exists) {
+                    allowedAdmins = configDoc.data().allowedAdmins || ['sean@fitmygolfclubs.com', 'sean@test.com'];
+                } else {
+                    allowedAdmins = ['sean@fitmygolfclubs.com', 'sean@test.com'];
+                }
+            } catch (error) {
+                console.error('Error loading admins:', error);
+                allowedAdmins = ['sean@fitmygolfclubs.com', 'sean@test.com'];
+            }
+        }
+
+        function login() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            document.getElementById('loginError').textContent = '';
+            
+            auth.signInWithEmailAndPassword(email, password)
+                .catch((error) => {
+                    document.getElementById('loginError').textContent = error.message;
+                });
+        }
+
+        function forgotPassword() {
+            const email = document.getElementById('loginEmail').value;
+            if (!email) {
+                document.getElementById('loginError').textContent = 'Please enter your email address first.';
+                return;
+            }
+            document.getElementById('loginError').textContent = '';
+            
+            auth.sendPasswordResetEmail(email)
+                .then(() => {
+                    document.getElementById('resetSuccess').style.display = 'block';
+                    setTimeout(() => { document.getElementById('resetSuccess').style.display = 'none'; }, 5000);
+                })
+                .catch((error) => {
+                    document.getElementById('loginError').textContent = error.message;
+                });
+        }
+
+        function logout() {
+            auth.signOut();
+        }
+
+        // ===== NAVIGATION =====
+        function toggleNav() {
+            document.querySelector('.nav-menu').classList.toggle('open');
+            document.querySelector('.nav-overlay').classList.toggle('open');
+        }
+
+        function toggleSection(header) {
+            header.parentElement.classList.toggle('collapsed');
+        }
+
+        // ===== LOAD ALL CONFIG =====
+        async function loadAllConfig() {
+            try {
+                // Load appSettings
+                const configDoc = await db.collection('config').doc('appSettings').get();
+                if (configDoc.exists) {
+                    const config = configDoc.data();
+                    
+                    // Section 1: Grading Weights
+                    document.getElementById('age_weight').value = (config.age_weight || 0.2) * 100;
+                    document.getElementById('weight_progression_weight').value = (config.weight_progression_weight || 0.15) * 100;
+                    document.getElementById('loft_gapping_weight').value = (config.loft_gapping_weight || 0.2) * 100;
+                    document.getElementById('flex_consistency_weight').value = (config.flex_consistency_weight || 0.1) * 100;
+                    document.getElementById('kickpoint_consistency_weight').value = (config.kickpoint_consistency_weight || 0.1) * 100;
+                    document.getElementById('torque_consistency_weight').value = (config.torque_consistency_weight || 0.05) * 100;
+                    document.getElementById('length_progression_weight').value = (config.length_progression_weight || 0.1) * 100;
+                    document.getElementById('lie_angle_progression_weight').value = (config.lie_angle_progression_weight || 0.1) * 100;
+                    updateWeightTotal();
+                    
+                    // Grading Engine
+                    if (config.grading_engine) {
+                        selectEngine(config.grading_engine);
+                    }
+
+                    // Section 2: Thresholds
+                    document.getElementById('grade_a_threshold').value = config.grade_a_threshold || 90;
+                    document.getElementById('grade_b_threshold').value = config.grade_b_threshold || 80;
+                    document.getElementById('grade_c_threshold').value = config.grade_c_threshold || 70;
+                    document.getElementById('grade_d_threshold').value = config.grade_d_threshold || 60;
+
+                    // Section 3: Age Scoring
+                    if (config.age_scoring_tiers) {
+                        const tiers = config.age_scoring_tiers;
+                        document.getElementById('age_score_1').value = tiers.year_1 || 97;
+                        document.getElementById('age_score_2').value = tiers.year_2 || 93;
+                        document.getElementById('age_score_3').value = tiers.year_3 || 90;
+                        document.getElementById('age_score_4').value = tiers.year_4 || 87;
+                        document.getElementById('age_score_5').value = tiers.year_5 || 83;
+                        document.getElementById('age_score_6').value = tiers.year_6 || 80;
+                        document.getElementById('age_score_7').value = tiers.year_7 || 77;
+                        document.getElementById('age_score_8').value = tiers.year_8 || 73;
+                        document.getElementById('age_score_9').value = tiers.year_9 || 70;
+                        document.getElementById('age_score_10').value = tiers.year_10 || 67;
+                        document.getElementById('age_score_11').value = tiers.year_11 || 63;
+                        document.getElementById('age_score_12').value = tiers.year_12 || 60;
+                        document.getElementById('age_score_13').value = tiers.year_13_plus || 55;
+                    }
+
+                    // Section 4: Outlier
+                    document.getElementById('minimum_outlier_percentage').value = config.minimum_outlier_percentage || 0.05;
+                    document.getElementById('maximum_outlier_percentage').value = config.maximum_outlier_percentage || 0.35;
+                    document.getElementById('outlier_percentage_multiplier').value = config.outlier_percentage_multiplier || 1;
+                    document.getElementById('scratch_golfer_outlier_percentage').value = config.scratch_golfer_outlier_percentage || 0.05;
+                    document.getElementById('high_handicap_outlier_percentage').value = config.high_handicap_outlier_percentage || 0.35;
+                    document.getElementById('outlier_removal_base_formula').value = config.outlier_removal_base_formula || 'handicap_divided_by_72';
+
+                    // Section 5: Claude
+                    document.getElementById('ai_recommendations_enabled').value = String(config.ai_recommendations_enabled !== false);
+                    document.getElementById('claude_model').value = config.claude_model || 'claude-sonnet-4-20250514';
+                    document.getElementById('claude_max_tokens').value = config.claude_max_tokens || 2000;
+                    document.getElementById('claude_tone').value = config.claude_tone || 'encouraging_professional';
+                    document.getElementById('claude_technical_detail_level').value = config.claude_technical_detail_level || 'moderate';
+                    document.getElementById('claude_response_length_target').value = config.claude_response_length_target || '200-400 words';
+                    document.getElementById('claude_emphasis_positive').value = String(config.claude_emphasis_positive !== false);
+                    document.getElementById('claude_handicap_sensitivity').value = String(config.claude_handicap_sensitivity !== false);
+                    document.getElementById('claude_include_product_recommendations').value = String(config.claude_include_product_recommendations === true);
+                    
+                    // New Claude fields
+                    document.getElementById('claude_adjustment_cap').value = config.claude_adjustment_cap || 15;
+                    document.getElementById('claude_sales_opportunities_enabled').value = String(config.claude_sales_opportunities_enabled !== false);
+                    document.getElementById('claude_year_range_min').value = config.claude_year_range_min || 2023;
+                    document.getElementById('claude_year_range_max').value = config.claude_year_range_max || 2025;
+                    
+                    // Factor Guidance
+                    if (config.claude_factor_guidance) {
+                        const guidance = config.claude_factor_guidance;
+                        document.getElementById('claude_guidance_age').value = guidance.age || 'putters age well, drivers don\'t';
+                        document.getElementById('claude_guidance_weight').value = guidance.weight || '50-60g driver through 100-130g wedges';
+                        document.getElementById('claude_guidance_loft').value = guidance.loft || '~4° gaps between clubs';
+                        document.getElementById('claude_guidance_flex').value = guidance.flex || 'NO industry standard - check label consistency only';
+                        document.getElementById('claude_guidance_kickpoint').value = guidance.kickpoint || 'High = lower flight, Low = higher flight';
+                        document.getElementById('claude_guidance_torque').value = guidance.torque || 'Lower torque = more control';
+                        document.getElementById('claude_guidance_length').value = guidance.length || '~0.5 inch decrease per club';
+                        document.getElementById('claude_guidance_lie').value = guidance.lie || '~1° progression between clubs';
+                    }
+
+                    // Section 7: Subscription
+                    document.getElementById('subscription_monthly_price').value = config.subscription_monthly_price || 9.99;
+                    document.getElementById('subscription_annual_price').value = config.subscription_annual_price || 99;
+                    document.getElementById('trial_duration_days').value = config.trial_duration_days || 14;
+                    document.getElementById('free_tier_test_clubs_per_month').value = config.free_tier_test_clubs_per_month || 1;
+                }
+
+                // Load AI Rules
+                loadAIRules();
+
+                // Load Admin Users
+                loadAdminUsers();
+
+                // Load Algorithm Version
+                loadAlgorithmVersion();
+
+            } catch (error) {
+                console.error('Error loading config:', error);
+            }
+        }
+
+        // ===== SECTION 1: GRADING WEIGHTS =====
+        function selectEngine(engine) {
+            document.querySelectorAll('.engine-card').forEach(card => {
+                card.classList.remove('selected');
+                if (card.dataset.engine === engine) {
+                    card.classList.add('selected');
+                }
+            });
+            document.getElementById('grading_engine').value = engine;
+        }
+
+        function updateWeightTotal() {
+            const total = parseFloat(document.getElementById('age_weight').value || 0) +
+                         parseFloat(document.getElementById('weight_progression_weight').value || 0) +
+                         parseFloat(document.getElementById('loft_gapping_weight').value || 0) +
+                         parseFloat(document.getElementById('flex_consistency_weight').value || 0) +
+                         parseFloat(document.getElementById('kickpoint_consistency_weight').value || 0) +
+                         parseFloat(document.getElementById('torque_consistency_weight').value || 0) +
+                         parseFloat(document.getElementById('length_progression_weight').value || 0) +
+                         parseFloat(document.getElementById('lie_angle_progression_weight').value || 0);
+
+            const totalEl = document.getElementById('weightTotal');
+            totalEl.textContent = `Total: ${total}%`;
+            totalEl.className = 'weight-total ' + (Math.abs(total - 100) < 0.1 ? 'valid' : 'invalid');
+        }
+
+        document.querySelectorAll('[id$="_weight"]').forEach(input => {
+            input.addEventListener('input', updateWeightTotal);
+        });
+
+        async function saveGradingWeights() {
+            const total = parseFloat(document.getElementById('age_weight').value || 0) +
+                         parseFloat(document.getElementById('weight_progression_weight').value || 0) +
+                         parseFloat(document.getElementById('loft_gapping_weight').value || 0) +
+                         parseFloat(document.getElementById('flex_consistency_weight').value || 0) +
+                         parseFloat(document.getElementById('kickpoint_consistency_weight').value || 0) +
+                         parseFloat(document.getElementById('torque_consistency_weight').value || 0) +
+                         parseFloat(document.getElementById('length_progression_weight').value || 0) +
+                         parseFloat(document.getElementById('lie_angle_progression_weight').value || 0);
+
+            if (Math.abs(total - 100) > 0.1) {
+                alert('Weights must total 100%!');
+                return;
+            }
+
+            const weights = {
+                age_weight: parseFloat(document.getElementById('age_weight').value) / 100,
+                weight_progression_weight: parseFloat(document.getElementById('weight_progression_weight').value) / 100,
+                loft_gapping_weight: parseFloat(document.getElementById('loft_gapping_weight').value) / 100,
+                flex_consistency_weight: parseFloat(document.getElementById('flex_consistency_weight').value) / 100,
+                kickpoint_consistency_weight: parseFloat(document.getElementById('kickpoint_consistency_weight').value) / 100,
+                torque_consistency_weight: parseFloat(document.getElementById('torque_consistency_weight').value) / 100,
+                length_progression_weight: parseFloat(document.getElementById('length_progression_weight').value) / 100,
+                lie_angle_progression_weight: parseFloat(document.getElementById('lie_angle_progression_weight').value) / 100
+            };
+
+            try {
+                // Save to config/appSettings
+                await db.collection('config').doc('appSettings').update({
+                    ...weights,
+                    grading_engine: document.getElementById('grading_engine').value,
+                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                // ALSO sync to algorithmVersions/v2.0 (what index.js reads)
+                await db.collection('algorithmVersions').doc('v2.0').update({
+                    'config.gradingWeights': {
+                        age: weights.age_weight,
+                        weight_progression: weights.weight_progression_weight,
+                        loft_gapping: weights.loft_gapping_weight,
+                        flex_consistency: weights.flex_consistency_weight,
+                        kickpoint_consistency: weights.kickpoint_consistency_weight,
+                        torque_consistency: weights.torque_consistency_weight,
+                        length_progression: weights.length_progression_weight,
+                        lie_angle_progression: weights.lie_angle_progression_weight
+                    },
+                    'metrics.lastUpdated': firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                showSuccess('weightSuccess');
+                loadAlgorithmVersion(); // Refresh version display
+            } catch (error) {
+                alert('Error saving: ' + error.message);
+            }
+        }
+
+        function resetGradingWeights() {
+            if (confirm('Reset all weights to default values?')) {
+                document.getElementById('age_weight').value = 20;
+                document.getElementById('weight_progression_weight').value = 15;
+                document.getElementById('loft_gapping_weight').value = 20;
+                document.getElementById('flex_consistency_weight').value = 10;
+                document.getElementById('kickpoint_consistency_weight').value = 10;
+                document.getElementById('torque_consistency_weight').value = 5;
+                document.getElementById('length_progression_weight').value = 10;
+                document.getElementById('lie_angle_progression_weight').value = 10;
+                updateWeightTotal();
+            }
+        }
+
+        // ===== SECTION 2: THRESHOLDS =====
+        async function saveThresholds() {
+            try {
+                await db.collection('config').doc('appSettings').update({
+                    grade_a_threshold: parseInt(document.getElementById('grade_a_threshold').value),
+                    grade_b_threshold: parseInt(document.getElementById('grade_b_threshold').value),
+                    grade_c_threshold: parseInt(document.getElementById('grade_c_threshold').value),
+                    grade_d_threshold: parseInt(document.getElementById('grade_d_threshold').value),
+                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                showSuccess('thresholdSuccess');
+            } catch (error) {
+                alert('Error saving: ' + error.message);
+            }
+        }
+
+        // ===== SECTION 3: AGE SCORING =====
+        async function saveAgeScoring() {
+            try {
+                const ageScores = {
+                    year_1: parseInt(document.getElementById('age_score_1').value),
+                    year_2: parseInt(document.getElementById('age_score_2').value),
+                    year_3: parseInt(document.getElementById('age_score_3').value),
+                    year_4: parseInt(document.getElementById('age_score_4').value),
+                    year_5: parseInt(document.getElementById('age_score_5').value),
+                    year_6: parseInt(document.getElementById('age_score_6').value),
+                    year_7: parseInt(document.getElementById('age_score_7').value),
+                    year_8: parseInt(document.getElementById('age_score_8').value),
+                    year_9: parseInt(document.getElementById('age_score_9').value),
+                    year_10: parseInt(document.getElementById('age_score_10').value),
+                    year_11: parseInt(document.getElementById('age_score_11').value),
+                    year_12: parseInt(document.getElementById('age_score_12').value),
+                    year_13_plus: parseInt(document.getElementById('age_score_13').value)
+                };
+                
+                await db.collection('config').doc('appSettings').update({
+                    age_scoring_tiers: ageScores,
+                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                // Also sync to algorithmVersions for index.js to read
+                await db.collection('algorithmVersions').doc('v2.0').update({
+                    age_scoring_tiers: ageScores,
+                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                showSuccess('ageScoreSuccess');
+            } catch (error) {
+                alert('Error saving: ' + error.message);
+            }
+        }
+
+        // ===== SECTION 4: OUTLIER =====
+        async function saveOutlierSettings() {
+            try {
+                await db.collection('config').doc('appSettings').update({
+                    minimum_outlier_percentage: parseFloat(document.getElementById('minimum_outlier_percentage').value),
+                    maximum_outlier_percentage: parseFloat(document.getElementById('maximum_outlier_percentage').value),
+                    outlier_percentage_multiplier: parseFloat(document.getElementById('outlier_percentage_multiplier').value),
+                    scratch_golfer_outlier_percentage: parseFloat(document.getElementById('scratch_golfer_outlier_percentage').value),
+                    high_handicap_outlier_percentage: parseFloat(document.getElementById('high_handicap_outlier_percentage').value),
+                    outlier_removal_base_formula: document.getElementById('outlier_removal_base_formula').value,
+                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                showSuccess('outlierSuccess');
+            } catch (error) {
+                alert('Error saving: ' + error.message);
+            }
+        }
+
+        // ===== SECTION 5: CLAUDE =====
+        async function saveClaudeSettings() {
+            try {
+                const claudeSettings = {
+                    ai_recommendations_enabled: document.getElementById('ai_recommendations_enabled').value === 'true',
+                    claude_model: document.getElementById('claude_model').value,
+                    claude_max_tokens: parseInt(document.getElementById('claude_max_tokens').value),
+                    claude_tone: document.getElementById('claude_tone').value,
+                    claude_technical_detail_level: document.getElementById('claude_technical_detail_level').value,
+                    claude_response_length_target: document.getElementById('claude_response_length_target').value,
+                    claude_emphasis_positive: document.getElementById('claude_emphasis_positive').value === 'true',
+                    claude_handicap_sensitivity: document.getElementById('claude_handicap_sensitivity').value === 'true',
+                    claude_include_product_recommendations: document.getElementById('claude_include_product_recommendations').value === 'true',
+                    // New fields
+                    claude_adjustment_cap: parseInt(document.getElementById('claude_adjustment_cap').value),
+                    claude_sales_opportunities_enabled: document.getElementById('claude_sales_opportunities_enabled').value === 'true',
+                    claude_year_range_min: parseInt(document.getElementById('claude_year_range_min').value),
+                    claude_year_range_max: parseInt(document.getElementById('claude_year_range_max').value),
+                    claude_factor_guidance: {
+                        age: document.getElementById('claude_guidance_age').value,
+                        weight: document.getElementById('claude_guidance_weight').value,
+                        loft: document.getElementById('claude_guidance_loft').value,
+                        flex: document.getElementById('claude_guidance_flex').value,
+                        kickpoint: document.getElementById('claude_guidance_kickpoint').value,
+                        torque: document.getElementById('claude_guidance_torque').value,
+                        length: document.getElementById('claude_guidance_length').value,
+                        lie: document.getElementById('claude_guidance_lie').value
+                    },
+                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                
+                await db.collection('config').doc('appSettings').update(claudeSettings);
+                
+                // Also sync to algorithmVersions for index.js to read
+                await db.collection('algorithmVersions').doc('v2.0').update({
+                    claude_adjustment_cap: claudeSettings.claude_adjustment_cap,
+                    claude_sales_opportunities_enabled: claudeSettings.claude_sales_opportunities_enabled,
+                    claude_year_range_min: claudeSettings.claude_year_range_min,
+                    claude_year_range_max: claudeSettings.claude_year_range_max,
+                    claude_factor_guidance: claudeSettings.claude_factor_guidance,
+                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                showSuccess('claudeSuccess');
+            } catch (error) {
+                alert('Error saving: ' + error.message);
+            }
+        }
+
+        // ===== SECTION 6: AI RULES =====
+        async function loadAIRules() {
+            try {
+                const rulesSnapshot = await db.collection('aiRecommendationRules').orderBy('priority').get();
+                const rulesList = document.getElementById('rulesList');
+                rulesList.innerHTML = '';
+
+                if (rulesSnapshot.empty) {
+                    rulesList.innerHTML = '<p style="color: var(--gray-light); text-align: center;">No rules yet. Click "Add New Rule" to create one.</p>';
+                    return;
+                }
+
+                rulesSnapshot.forEach(doc => {
+                    const rule = doc.data();
+                    const ruleCard = document.createElement('div');
+                    ruleCard.className = 'rule-card';
+                    ruleCard.innerHTML = `
+                        <div class="rule-header">
+                            <div>
+                                <div class="rule-name">${rule.name || 'Unnamed Rule'}</div>
+                                <div style="color: var(--gray-light); font-size: 12px; margin-top: 5px;">Priority: ${rule.priority || 1}</div>
+                            </div>
+                            <div class="rule-controls">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" ${rule.enabled ? 'checked' : ''} onchange="toggleRule('${doc.id}', this.checked)">
+                                    <span class="slider"></span>
+                                </label>
+                                <button class="btn btn-danger" style="padding: 8px 16px; font-size: 14px;" onclick="deleteRule('${doc.id}')">Delete</button>
+                            </div>
+                        </div>
+                        <div class="rule-text">${rule.ruleText || ''}</div>
+                    `;
+                    rulesList.appendChild(ruleCard);
+                });
+            } catch (error) {
+                console.error('Error loading rules:', error);
+            }
+        }
+
+        async function toggleRule(ruleId, enabled) {
+            try {
+                await db.collection('aiRecommendationRules').doc(ruleId).update({ enabled });
+            } catch (error) {
+                alert('Error updating rule: ' + error.message);
+            }
+        }
+
+        async function deleteRule(ruleId) {
+            if (confirm('Delete this rule? This cannot be undone.')) {
+                try {
+                    await db.collection('aiRecommendationRules').doc(ruleId).delete();
+                    loadAIRules();
+                } catch (error) {
+                    alert('Error deleting rule: ' + error.message);
+                }
+            }
+        }
+
+        function showAddRuleForm() {
+            document.getElementById('addRuleForm').style.display = 'block';
+            document.getElementById('newRuleName').value = '';
+            document.getElementById('newRulePriority').value = '1';
+            document.getElementById('newRuleText').value = '';
+        }
+
+        function cancelAddRule() {
+            document.getElementById('addRuleForm').style.display = 'none';
+        }
+
+        async function saveNewRule() {
+            const name = document.getElementById('newRuleName').value.trim();
+            const priority = parseInt(document.getElementById('newRulePriority').value);
+            const ruleText = document.getElementById('newRuleText').value.trim();
+
+            if (!name || !ruleText) {
+                alert('Please fill in all fields');
+                return;
+            }
+
+            try {
+                await db.collection('aiRecommendationRules').add({
+                    name,
+                    priority,
+                    ruleText,
+                    enabled: true,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                cancelAddRule();
+                loadAIRules();
+            } catch (error) {
+                alert('Error saving rule: ' + error.message);
+            }
+        }
+
+        // ===== SECTION 7: SUBSCRIPTION =====
+        async function saveSubscriptionSettings() {
+            try {
+                await db.collection('config').doc('appSettings').update({
+                    subscription_monthly_price: parseFloat(document.getElementById('subscription_monthly_price').value),
+                    subscription_annual_price: parseFloat(document.getElementById('subscription_annual_price').value),
+                    trial_duration_days: parseInt(document.getElementById('trial_duration_days').value),
+                    free_tier_test_clubs_per_month: parseInt(document.getElementById('free_tier_test_clubs_per_month').value),
+                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                showSuccess('subscriptionSuccess');
+            } catch (error) {
+                alert('Error saving: ' + error.message);
+            }
+        }
+
+        // ===== SECTION 8: USER MANAGEMENT =====
+        async function loadAdminUsers() {
+            try {
+                const configDoc = await db.collection('config').doc('appSettings').get();
+                const usersList = document.getElementById('adminUsersList');
+                usersList.innerHTML = '';
+
+                if (configDoc.exists) {
+                    let admins = configDoc.data().allowedAdmins || [];
+
+                    // Handle old format (array of strings)
+                    if (admins.length > 0 && typeof admins[0] === 'string') {
+                        admins = admins.map(email => ({
+                            email,
+                            permissions: { configuration: true, analytics: true, userFeedback: true, systemAdmin: email === 'sean@fitmygolfclubs.com' },
+                            isPrimary: email === 'sean@fitmygolfclubs.com'
+                        }));
+                    }
+
+                    if (admins.length === 0) {
+                        usersList.innerHTML = '<p style="color: var(--gray-light); text-align: center;">No admin users configured.</p>';
+                        return;
+                    }
+
+                    admins.forEach(admin => {
+                        const email = admin.email || admin;
+                        const perms = admin.permissions || {};
+                        const isPrimary = admin.isPrimary || email === 'sean@fitmygolfclubs.com';
+
+                        const badges = [];
+                        if (isPrimary) badges.push('<span class="badge primary">Primary</span>');
+                        if (perms.configuration) badges.push('<span class="badge">Config</span>');
+                        if (perms.analytics) badges.push('<span class="badge">Analytics</span>');
+                        if (perms.userFeedback) badges.push('<span class="badge">Feedback</span>');
+                        if (perms.systemAdmin) badges.push('<span class="badge">Admin</span>');
+
+                        const userCard = document.createElement('div');
+                        userCard.className = 'user-card';
+                        userCard.innerHTML = `
+                            <div class="user-info-card">
+                                <div class="user-email-display">${email}</div>
+                                <div class="user-badges">${badges.join('')}</div>
+                            </div>
+                            ${!isPrimary ? `<button class="btn btn-danger" onclick="removeAdmin('${email}')">Remove</button>` : ''}
+                        `;
+                        usersList.appendChild(userCard);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading admin users:', error);
+            }
+        }
+
+        function showAddAdminForm() {
+            document.getElementById('addAdminForm').style.display = 'block';
+            document.getElementById('newAdminEmail').value = '';
+        }
+
+        function cancelAddAdmin() {
+            document.getElementById('addAdminForm').style.display = 'none';
+        }
+
+        async function saveNewAdmin() {
+            const email = document.getElementById('newAdminEmail').value.trim().toLowerCase();
+
+            if (!email || !email.includes('@')) {
+                alert('Please enter a valid email address');
+                return;
+            }
+
+            const permissions = {
+                configuration: document.getElementById('perm_configuration').checked,
+                analytics: document.getElementById('perm_analytics').checked,
+                userFeedback: document.getElementById('perm_userFeedback').checked,
+                systemAdmin: document.getElementById('perm_systemAdmin').checked
+            };
+
+            try {
+                const configDoc = await db.collection('config').doc('appSettings').get();
+                let admins = configDoc.exists ? (configDoc.data().allowedAdmins || []) : [];
+
+                // Convert old format
+                if (admins.length > 0 && typeof admins[0] === 'string') {
+                    admins = admins.map(e => ({
+                        email: e,
+                        permissions: { configuration: true, analytics: true, userFeedback: true, systemAdmin: e === 'sean@fitmygolfclubs.com' },
+                        isPrimary: e === 'sean@fitmygolfclubs.com'
+                    }));
+                }
+
+                if (admins.some(a => (a.email || a) === email)) {
+                    alert('This email is already an admin');
+                    return;
+                }
+
+                admins.push({ email, permissions, isPrimary: false });
+
+                await db.collection('config').doc('appSettings').update({ allowedAdmins: admins });
+
+                showSuccess('adminUserSuccess');
+                cancelAddAdmin();
+                loadAdminUsers();
+                await loadAllowedAdmins();
+            } catch (error) {
+                alert('Error adding admin: ' + error.message);
+            }
+        }
+
+        async function removeAdmin(email) {
+            if (email === 'sean@fitmygolfclubs.com') {
+                alert('Cannot remove primary admin');
+                return;
+            }
+
+            if (!confirm(`Remove ${email} from admin access?`)) return;
+
+            try {
+                const configDoc = await db.collection('config').doc('appSettings').get();
+                let admins = configDoc.data().allowedAdmins || [];
+                admins = admins.filter(a => (a.email || a) !== email);
+
+                await db.collection('config').doc('appSettings').update({ allowedAdmins: admins });
+
+                loadAdminUsers();
+                await loadAllowedAdmins();
+            } catch (error) {
+                alert('Error removing admin: ' + error.message);
+            }
+        }
+
+        // ===== SECTION 10: ALGORITHM VERSION =====
+        async function loadAlgorithmVersion() {
+            try {
+                const versionDoc = await db.collection('algorithmVersions').doc('v2.0').get();
+
+                if (versionDoc.exists) {
+                    const data = versionDoc.data();
+
+                    document.getElementById('versionNumber').textContent = `v${data.versionNumber} (Live)`;
+                    document.getElementById('versionStatus').textContent = data.status === 'active' ? 'Active' : data.status;
+                    document.getElementById('deployedBy').textContent = data.deployedBy || '-';
+                    document.getElementById('versionChangelog').textContent = data.changelog || '-';
+
+                    if (data.deployedAt) {
+                        const date = data.deployedAt.toDate ? data.deployedAt.toDate() : new Date(data.deployedAt._seconds * 1000);
+                        document.getElementById('deployedAt').textContent = date.toLocaleDateString();
+                    }
+
+                    // Metrics
+                    const metrics = data.metrics || {};
+                    document.getElementById('totalAnalyses').textContent = metrics.totalAnalyses || 0;
+                    document.getElementById('averageGrade').textContent = metrics.averageGrade ? (metrics.averageGrade / 100).toFixed(1) : '--';
+                    document.getElementById('userSatisfaction').textContent = metrics.userSatisfactionScore ? `${metrics.userSatisfactionScore}/5.0` : '--';
+                    document.getElementById('successRate').textContent = metrics.recommendationSuccessRate ? `${metrics.recommendationSuccessRate}%` : '--';
+
+                    // Weights display
+                    const weights = data.config?.gradingWeights || {};
+                    const weightsDisplay = document.getElementById('activeWeightsDisplay');
+                    weightsDisplay.innerHTML = Object.entries(weights).map(([key, value]) => `
+                        <div style="background: var(--navy); padding: 12px; border-radius: 8px; text-align: center;">
+                            <div style="font-size: 18px; font-weight: 600; color: var(--blue);">${Math.round(value * 100)}%</div>
+                            <div style="font-size: 11px; color: var(--gray-light); margin-top: 4px;">${key.replace(/_/g, ' ')}</div>
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Error loading algorithm version:', error);
+            }
+        }
+
+        // ===== UTILITIES =====
+        function showSuccess(elementId) {
+            const el = document.getElementById(elementId);
+            el.style.display = 'block';
+            setTimeout(() => { el.style.display = 'none'; }, 3000);
+        }
+
+        // Close nav when clicking a link
+        document.querySelectorAll('.nav-menu a').forEach(link => {
+            link.addEventListener('click', () => {
+                document.querySelector('.nav-menu').classList.remove('open');
+                document.querySelector('.nav-overlay').classList.remove('open');
+            });
+        });
+    </script>
+</body>
+</html>

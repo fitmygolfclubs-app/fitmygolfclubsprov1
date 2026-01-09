@@ -1,0 +1,12 @@
+{
+  "name": "firebase-migration",
+  "version": "1.0.0",
+  "description": "Migrate Firestore collections from production to sandbox",
+  "main": "migrate.js",
+  "scripts": {
+    "migrate": "node migrate.js"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.0.0"
+  }
+}

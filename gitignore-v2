@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+
+# ALL Firebase/Google service account keys
+*.json
+!package.json
+!package-lock.json
+!firebase.json
+
+# Environment files
+.env
+.env.local
+.env.*
+
+# Firebase cache
+.firebase/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Backup/working files with potential secrets
+**/index[0-9]*.js
+**/index*working*.js
+**/index*before*.js
+**/index*buggy*.js
+**/index*fix*.js
+**/index*test*.js
+**/*prebugfix*.js
+**/*syntaxerror*.js
+
+# Any file with API key patterns
+**/functions/index[0-9]*.js
+**/functions/*working*.js
+**/functions/*before*.js
