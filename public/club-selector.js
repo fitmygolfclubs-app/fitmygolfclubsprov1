@@ -346,7 +346,8 @@ const ClubSelector = (function() {
           border-radius: 16px;
           width: 100%;
           max-width: 480px;
-          max-height: 90vh;
+          max-height: 85vh;
+          min-height: 500px;
           overflow: visible;
           display: flex;
           flex-direction: column;
@@ -386,7 +387,7 @@ const ClubSelector = (function() {
           overflow-y: auto;
           overflow-x: visible;
           flex: 1;
-          max-height: calc(90vh - 140px);
+          min-height: 350px;
         }
 
         /* Step Indicator */
@@ -542,6 +543,7 @@ const ClubSelector = (function() {
         /* Autocomplete Wrapper */
         .cs-autocomplete-wrapper {
           position: relative;
+          overflow: visible;
         }
 
         /* Dropdown */
@@ -550,15 +552,15 @@ const ClubSelector = (function() {
           top: 100%;
           left: 0;
           right: 0;
-          background: #252a38;
-          border: 1px solid #333;
+          background: #1e222e;
+          border: 2px solid #00d4ff;
           border-radius: 8px;
-          max-height: 250px;
+          max-height: 300px;
           overflow-y: auto;
           display: none;
           z-index: 10001;
           margin-top: 4px;
-          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+          box-shadow: 0 12px 40px rgba(0, 0, 0, 0.8);
         }
         .cs-dropdown.show {
           display: block;

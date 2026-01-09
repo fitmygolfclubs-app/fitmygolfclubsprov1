@@ -192,6 +192,16 @@ const TestingTab = (function() {
       console.log('🔍 First club data:', userClubs[0]);
     }
     
+    // Sort order for club types (matching bag tab)
+    const sortOrder = { 
+      'driver': 1, '3-wood': 2, '3w': 2, '5-wood': 3, '5w': 3, '7-wood': 4,
+      '2-hybrid': 9, '2h': 9, '3-hybrid': 10, '3h': 10, '4-hybrid': 11, '4h': 11, '5-hybrid': 12, '5h': 12,
+      '4-iron': 19, '4i': 19, '5-iron': 20, '5i': 20, '6-iron': 21, '6i': 21, '7-iron': 22, '7i': 22, 
+      '8-iron': 23, '8i': 23, '9-iron': 24, '9i': 24, 'pw': 25, 'pitching wedge': 25,
+      'gw': 30, 'gap wedge': 30, '50': 31, '52': 32, 'sw': 33, 'sand wedge': 33, '54': 34, '56': 35, 
+      'lw': 36, 'lob wedge': 36, '58': 37, '60': 38 
+    };
+    
     // Group clubs by category for display (case-insensitive)
     const categories = {
       'Woods': userClubs.filter(c => c.category?.toLowerCase() === 'woods'),
@@ -200,11 +210,19 @@ const TestingTab = (function() {
       'Wedges': userClubs.filter(c => c.category?.toLowerCase() === 'wedges')
     };
     
+    // Sort each category
+    Object.values(categories).forEach(arr => {
+      arr.sort((a, b) => (sortOrder[a.clubType?.toLowerCase()] || 50) - (sortOrder[b.clubType?.toLowerCase()] || 50));
+    });
+    
     console.log('🔍 Categories:', categories);
     
     let html = '';
     for (const [category, clubs] of Object.entries(categories)) {
       if (clubs.length === 0) continue;
+      
+      // Add category header
+      html += `<div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; margin: 12px 0 8px 0; padding-left: 4px;">${category}</div>`;
       
       clubs.forEach(club => {
         const testCount = savedTests.filter(t => t.club_a?.id === club.id).length;
