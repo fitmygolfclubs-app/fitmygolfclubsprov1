@@ -10596,6 +10596,7 @@
         
         function populateMetricsFromOCR(metrics, clubSide) {
             const suffix = clubSide === 'a' ? '-a' : '-b';
+            const stateKey = clubSide === 'a' ? 'clubAData' : 'clubBData';
             
             // Map OCR field names to form field IDs
             const fieldMap = {
@@ -10625,10 +10626,16 @@
                             field.style.borderColor = '';
                         }, 3000);
                     }
+                    
+                    // Also update state for validation
+                    perfTestState[stateKey][ocrKey] = metrics[ocrKey];
                 }
             }
             
             console.log(`✅ Populated ${Object.keys(metrics).length} fields for Club ${clubSide.toUpperCase()} from OCR`);
+            
+            // Re-validate to enable Continue button
+            validateStep3Data();
         }
 
         function goToTestStep(step) {
