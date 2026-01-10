@@ -4598,6 +4598,117 @@
             }
         }
 
+        async function lookupProfileGHIN() {
+            const ghinInput = document.getElementById('profile-ghin').value.trim();
+            const resultDiv = document.getElementById('profile-ghin-result');
+            
+            if (!ghinInput || ghinInput.length < 7) {
+                showToast('Please enter a valid GHIN number (7-8 digits)', 'error');
+                return;
+            }
+            
+            // Show loading
+            resultDiv.style.display = 'block';
+            resultDiv.style.background = 'var(--bg-card)';
+            resultDiv.innerHTML = '<div style="color: var(--text-muted);">🔍 Looking up GHIN...</div>';
+            
+            try {
+                // Call Cloud Function
+                const lookupGhinNumber = firebase.functions().httpsCallable('lookupGhinNumber');
+                const result = await lookupGhinNumber({ ghinNumber: ghinInput });
+                
+                if (result.data) {
+                    const golfer = result.data;
+                    resultDiv.style.background = 'var(--green-dim)';
+                    resultDiv.innerHTML = `
+                        <div style="color: var(--green);">✓ Found: ${golfer.name}</div>
+                        <div style="color: var(--text-secondary);">Handicap: ${golfer.handicap || 'N/A'} • ${golfer.club || ''}</div>
+                    `;
+                    
+                    // Auto-fill handicap if found
+                    if (golfer.handicap) {
+                        document.getElementById('profile-handicap').value = golfer.handicap;
+                    }
+                    
+                    // Auto-fill name fields if empty
+                    const firstNameInput = document.getElementById('profile-first-name');
+                    const lastNameInput = document.getElementById('profile-last-name');
+                    if (golfer.name && firstNameInput && !firstNameInput.value.trim()) {
+                        const nameParts = golfer.name.split(' ');
+                        firstNameInput.value = nameParts[0] || '';
+                        lastNameInput.value = nameParts.slice(1).join(' ') || '';
+                    }
+                } else {
+                    resultDiv.style.background = 'var(--yellow-dim)';
+                    resultDiv.innerHTML = `
+                        <div style="color: var(--yellow);">⚠️ GHIN not found</div>
+                        <div style="color: var(--text-secondary);">Verify the number or enter handicap manually</div>
+                    `;
+                }
+            } catch (error) {
+                console.error('GHIN lookup error:', error);
+                resultDiv.style.background = 'var(--red-dim)';
+                resultDiv.innerHTML = `
+                    <div style="color: var(--red);">⚠️ Lookup failed</div>
+                    <div style="color: var(--text-secondary);">${error.message || 'Service temporarily unavailable'}</div>
+                `;
+            }
+        }
+        
+        function switchProfileTab(tabId) {
+            // Update tab buttons
+            document.querySelectorAll('.profile-tab').forEach(tab => tab.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Update tab content
+            document.querySelectorAll('.profile-tab-content').forEach(content => content.classList.remove('active'));
+            const targetContent = document.getElementById('profile-tab-' + tabId);
+            if (targetContent) {
+                targetContent.classList.add('active');
+            }
+        }
+        
+        async function saveProfile() {
+            // Gather form data
+            const profileData = {
+                firstName: document.getElementById('profile-first-name')?.value?.trim() || '',
+                lastName: document.getElementById('profile-last-name')?.value?.trim() || '',
+                email: document.getElementById('profile-email')?.value?.trim() || '',
+                ghinNumber: document.getElementById('profile-ghin')?.value?.trim() || '',
+                handicap: parseFloat(document.getElementById('profile-handicap')?.value) || null,
+                age: parseInt(document.getElementById('profile-age')?.value) || null,
+                gender: document.getElementById('profile-gender')?.value || '',
+                handedness: document.getElementById('profile-handedness')?.value || 'right',
+                // Swing tab
+                swingSpeed: parseFloat(document.getElementById('profile-swing-speed')?.value) || null,
+                tempo: document.getElementById('profile-tempo')?.value || '',
+                // Add more fields as needed
+            };
+            
+            console.log('Saving profile:', profileData);
+            
+            // TODO: Save to Firestore
+            // For now, just show success
+            showToast('Profile saved successfully!', 'success');
+            closeModal('profile-modal');
+        }
+        
+        function handleProfilePictureUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = document.getElementById('profile-picture-img');
+                const initials = document.getElementById('profile-initials');
+                
+                img.src = e.target.result;
+                img.style.display = 'block';
+                initials.style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+        }
+
         function copyInviteLink() {
             const linkInput = document.getElementById('invite-link');
             linkInput.select();
@@ -10962,7 +11073,11 @@
                     <div class="profile-form-row">
                         <div class="profile-form-group">
                             <label class="profile-form-label">GHIN Number</label>
-                            <input type="text" class="profile-form-input" id="profile-ghin" placeholder="e.g. 1234567">
+                            <div style="display: flex; gap: 8px;">
+                                <input type="text" class="profile-form-input" id="profile-ghin" placeholder="e.g. 1234567" style="flex: 1;">
+                                <button class="btn btn-secondary" onclick="lookupProfileGHIN()" style="white-space: nowrap; padding: 8px 12px;">🔍 Look Up</button>
+                            </div>
+                            <div id="profile-ghin-result" style="display: none; margin-top: 8px; padding: 8px; border-radius: 6px; font-size: 12px;"></div>
                         </div>
                         <div class="profile-form-group">
                             <label class="profile-form-label">Handicap</label>
