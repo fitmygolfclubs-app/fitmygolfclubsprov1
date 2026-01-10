@@ -1913,8 +1913,14 @@
                             <!-- Comparison Headers -->
                             <div style="display: flex; gap: 8px; margin-bottom: 8px;">
                                 <div style="flex: 1; font-size: 11px; text-transform: uppercase; color: var(--text-muted);">Metric</div>
-                                <div style="flex: 1; font-size: 11px; text-transform: uppercase; color: var(--cyan); text-align: center;">Your Club (A)</div>
-                                <div style="flex: 1; font-size: 11px; text-transform: uppercase; color: var(--green); text-align: center;">Test Club (B)</div>
+                                <div style="flex: 1; text-align: center;">
+                                    <div style="font-size: 11px; text-transform: uppercase; color: var(--cyan);">Your Club (A)</div>
+                                    <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;" id="header-club-a-name">--</div>
+                                </div>
+                                <div style="flex: 1; text-align: center;">
+                                    <div style="font-size: 11px; text-transform: uppercase; color: var(--green);">Test Club (B)</div>
+                                    <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;" id="header-club-b-name">--</div>
+                                </div>
                             </div>
                             
                             <!-- Dynamic Comparison Rows -->
@@ -10703,6 +10709,14 @@
             const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
             document.getElementById('results-subtitle').textContent = `${clubType} Test • ${today}`;
             
+            // Update comparison header club names
+            const clubAName = [clubA.brand, clubA.model].filter(Boolean).join(' ') || 'Your Club';
+            const clubBName = clubB.name || [clubB.brand, clubB.model].filter(Boolean).join(' ') || 'Test Club';
+            const headerClubA = document.getElementById('header-club-a-name');
+            const headerClubB = document.getElementById('header-club-b-name');
+            if (headerClubA) headerClubA.textContent = clubAName;
+            if (headerClubB) headerClubB.textContent = clubBName;
+            
             // Calculate winner based on carry distance (primary metric)
             const carryDiff = (dataB.carry || 0) - (dataA.carry || 0);
             const bWins = carryDiff > 0;
@@ -10940,9 +10954,14 @@
                 return;
             }
             
-            const testName = prompt('Name this test:', 
-                (perfTestState.selectedClub?.clubType || 'Club') + ' vs ' + 
-                (perfTestState.compareClub?.name || 'Test Club'));
+            // Build descriptive test name
+            const clubType = perfTestState.selectedClub?.clubType || 'Club';
+            const myClubName = [perfTestState.selectedClub?.brand, perfTestState.selectedClub?.model].filter(Boolean).join(' ') || 'My Club';
+            const testClubName = perfTestState.compareClub?.name || 
+                [perfTestState.compareClub?.brand, perfTestState.compareClub?.model].filter(Boolean).join(' ') || 'Test Club';
+            
+            const defaultName = `${clubType} - ${myClubName} vs ${testClubName}`;
+            const testName = prompt('Name this test:', defaultName);
             
             if (!testName) return;
             
@@ -10951,9 +10970,9 @@
             
             try {
                 // Get current user/client ID
-                const userId = currentClientId || window.currentUserId;
+                const userId = window.currentClient?.id;
                 if (!userId) {
-                    throw new Error('No user ID available');
+                    throw new Error('No client selected');
                 }
                 
                 // Calculate winner
