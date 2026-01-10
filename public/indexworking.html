@@ -10278,54 +10278,6 @@
             document.getElementById('data-continue-btn').disabled = false;
         }
 
-        // Toast notification system
-        function showToast(message, type = 'info') {
-            // Add keyframes if not already added
-            if (!document.getElementById('toast-keyframes')) {
-                const style = document.createElement('style');
-                style.id = 'toast-keyframes';
-                style.textContent = `
-                    @keyframes toastSlideIn {
-                        from { opacity: 0; transform: translateY(20px); }
-                        to { opacity: 1; transform: translateY(0); }
-                    }
-                `;
-                document.head.appendChild(style);
-            }
-            
-            // Check if toast container exists
-            let toastContainer = document.getElementById('toast-container');
-            if (!toastContainer) {
-                toastContainer = document.createElement('div');
-                toastContainer.id = 'toast-container';
-                toastContainer.style.cssText = 'position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); z-index: 10000;';
-                document.body.appendChild(toastContainer);
-            }
-            
-            const toast = document.createElement('div');
-            const bgColor = type === 'error' ? 'var(--red, #ff4444)' : type === 'success' ? 'var(--green, #00d26a)' : 'var(--cyan, #00bcd4)';
-            toast.style.cssText = `
-                background: ${bgColor};
-                color: #000;
-                padding: 12px 24px;
-                border-radius: 8px;
-                margin-top: 8px;
-                font-weight: 500;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-                animation: toastSlideIn 0.3s ease;
-            `;
-            toast.textContent = message;
-            
-            toastContainer.appendChild(toast);
-            
-            setTimeout(() => {
-                toast.style.opacity = '0';
-                toast.style.transform = 'translateY(10px)';
-                toast.style.transition = 'all 0.3s ease';
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
-        }
-
         function showProcessingOverlay(message, duration, callback) {
             // Create overlay if it doesn't exist
             let overlay = document.getElementById('processing-overlay');
@@ -10933,144 +10885,14 @@
 
         let savedTestsCount = 2;
 
-        async function saveTest() {
-            // Validate we have test data
-            if (!perfTestState.isComplete) {
-                showToast('No test results to save', 'error');
-                return;
-            }
-            
-            const testName = prompt('Name this test:', 
-                (perfTestState.selectedClub?.clubType || 'Club') + ' vs ' + 
-                (perfTestState.compareClub?.name || 'Test Club'));
-            
+        function saveTest() {
+            const testName = prompt('Name this test:', 'Driver vs ' + (perfTestState.compareClub?.name || 'Test Club'));
             if (!testName) return;
             
-            // Show loading
-            showToast('Saving test...', 'info');
+            savedTestsCount++;
+            document.getElementById('saved-tests-count').textContent = savedTestsCount;
             
-            try {
-                // Get current user/client ID
-                const userId = currentClientId || window.currentUserId;
-                if (!userId) {
-                    throw new Error('No user ID available');
-                }
-                
-                // Calculate winner
-                const carryDiff = (perfTestState.clubBData?.carry || 0) - (perfTestState.clubAData?.carry || 0);
-                let winner = 'tie';
-                if (carryDiff > 2) winner = 'b';
-                else if (carryDiff < -2) winner = 'a';
-                
-                // Build test document
-                const testData = {
-                    name: testName,
-                    created_at: firebase.firestore.FieldValue.serverTimestamp(),
-                    
-                    // Club A (user's club from bag)
-                    club_a: {
-                        id: perfTestState.selectedClub?.id || null,
-                        clubType: perfTestState.selectedClub?.clubType || null,
-                        brand: perfTestState.selectedClub?.brand || null,
-                        model: perfTestState.selectedClub?.model || null,
-                        category: perfTestState.selectedClub?.category || null
-                    },
-                    
-                    // Club B (comparison/test club)
-                    club_b: {
-                        name: perfTestState.compareClub?.name || null,
-                        brand: perfTestState.compareClub?.brand || null,
-                        model: perfTestState.compareClub?.model || null,
-                        shaft: perfTestState.compareClub?.shaft || null,
-                        source: perfTestState.compareClub?.source || 'database'
-                    },
-                    
-                    // Performance data - Club A
-                    club_a_data: {
-                        ballSpeed: perfTestState.clubAData?.ballSpeed || null,
-                        carry: perfTestState.clubAData?.carry || null,
-                        launch: perfTestState.clubAData?.launch || null,
-                        spin: perfTestState.clubAData?.spin || null,
-                        clubSpeed: perfTestState.clubAData?.clubSpeed || null,
-                        totalDistance: perfTestState.clubAData?.totalDistance || null,
-                        attackAngle: perfTestState.clubAData?.attackAngle || null,
-                        smashFactor: perfTestState.clubAData?.smashFactor || null,
-                        clubPath: perfTestState.clubAData?.clubPath || null,
-                        faceAngle: perfTestState.clubAData?.faceAngle || null,
-                        height: perfTestState.clubAData?.height || null
-                    },
-                    
-                    // Performance data - Club B
-                    club_b_data: {
-                        ballSpeed: perfTestState.clubBData?.ballSpeed || null,
-                        carry: perfTestState.clubBData?.carry || null,
-                        launch: perfTestState.clubBData?.launch || null,
-                        spin: perfTestState.clubBData?.spin || null,
-                        clubSpeed: perfTestState.clubBData?.clubSpeed || null,
-                        totalDistance: perfTestState.clubBData?.totalDistance || null,
-                        attackAngle: perfTestState.clubBData?.attackAngle || null,
-                        smashFactor: perfTestState.clubBData?.smashFactor || null,
-                        clubPath: perfTestState.clubBData?.clubPath || null,
-                        faceAngle: perfTestState.clubBData?.faceAngle || null,
-                        height: perfTestState.clubBData?.height || null
-                    },
-                    
-                    // Results
-                    winner: winner,
-                    goals: perfTestState.goals || [],
-                    
-                    // Net gains
-                    net_gains: {
-                        carry: carryDiff,
-                        ballSpeed: (perfTestState.clubBData?.ballSpeed || 0) - (perfTestState.clubAData?.ballSpeed || 0),
-                        spin: (perfTestState.clubBData?.spin || 0) - (perfTestState.clubAData?.spin || 0)
-                    },
-                    
-                    // AI Analysis text
-                    ai_summary: document.getElementById('ai-analysis-text')?.textContent || null,
-                    
-                    // Metadata
-                    applied_to_scenario: false,
-                    applied_to_bag: false
-                };
-                
-                // Save to Firestore
-                const db = firebase.firestore();
-                const testsRef = db.collection('users').doc(userId).collection('tests');
-                
-                // Check current count - enforce 10 max
-                const existingTests = await testsRef.orderBy('created_at', 'desc').get();
-                
-                if (existingTests.size >= 10) {
-                    // Delete oldest test to make room
-                    const oldestTest = existingTests.docs[existingTests.docs.length - 1];
-                    await oldestTest.ref.delete();
-                    console.log('Deleted oldest test to make room:', oldestTest.id);
-                }
-                
-                // Add new test
-                const docRef = await testsRef.add(testData);
-                console.log('✅ Test saved with ID:', docRef.id);
-                
-                // Update UI
-                showToast('✅ Test saved!', 'success');
-                
-                // Refresh banner cards if TestingTab module is available
-                if (typeof TestingTab !== 'undefined' && TestingTab.refreshTests) {
-                    await TestingTab.refreshTests();
-                }
-                
-                // Update saved tests count in UI
-                const countEl = document.getElementById('saved-tests-count');
-                if (countEl) {
-                    const newCount = Math.min(existingTests.size + 1, 10);
-                    countEl.textContent = newCount;
-                }
-                
-            } catch (error) {
-                console.error('Error saving test:', error);
-                showToast('Failed to save test: ' + error.message, 'error');
-            }
+            alert('✅ Test saved!\n\nYou can view it anytime from the "Saved" button.');
         }
 
         function loadTest(id) {

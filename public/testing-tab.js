@@ -1,6 +1,8 @@
 /**
- * TestingTab Module v1.0
+ * TestingTab Module v1.1
  * FitMyGolfClubs Pro - Performance Testing
+ * 
+ * UPDATED: Firestore integration for saving/loading tests
  * 
  * Features:
  * - Banner cards showing saved tests (10 max)
@@ -103,18 +105,37 @@ const TestingTab = (function() {
    * Load saved tests from Firestore (newest first, max 10)
    */
   async function loadSavedTests() {
-    const snapshot = await db.collection('users').doc(userId)
-      .collection('tests')
-      .orderBy('created_at', 'desc')
-      .limit(MAX_SAVED_TESTS)
-      .get();
+    try {
+      const snapshot = await db.collection('users').doc(userId)
+        .collection('tests')
+        .orderBy('created_at', 'desc')
+        .limit(MAX_SAVED_TESTS)
+        .get();
+      
+      savedTests = [];
+      snapshot.forEach(doc => {
+        savedTests.push({ id: doc.id, ...doc.data() });
+      });
+      
+      console.log(`✅ Loaded ${savedTests.length} saved tests`);
+    } catch (error) {
+      console.error('Error loading saved tests:', error);
+      savedTests = [];
+    }
+  }
+
+  /**
+   * Refresh tests from Firestore and update UI
+   */
+  async function refreshTests() {
+    await loadSavedTests();
+    renderBannerCards();
     
-    savedTests = [];
-    snapshot.forEach(doc => {
-      savedTests.push({ id: doc.id, ...doc.data() });
-    });
-    
-    console.log(`✅ Loaded ${savedTests.length} saved tests`);
+    // Update count in UI
+    const countEl = document.getElementById('saved-tests-count');
+    if (countEl) {
+      countEl.textContent = savedTests.length;
+    }
   }
 
   // ============================================
@@ -130,37 +151,74 @@ const TestingTab = (function() {
     
     if (savedTests.length === 0) {
       container.innerHTML = `
-        <div class="empty-state">
-          <div class="empty-icon">📊</div>
-          <div class="empty-text">No saved tests yet</div>
-          <div class="empty-hint">Run a comparison to see results here</div>
+        <div class="empty-state" style="text-align: center; padding: 20px; color: var(--text-muted);">
+          <div class="empty-icon" style="font-size: 32px; margin-bottom: 8px;">📊</div>
+          <div class="empty-text" style="font-weight: 500;">No saved tests yet</div>
+          <div class="empty-hint" style="font-size: 12px;">Run a comparison to see results here</div>
         </div>
       `;
       return;
     }
     
-    container.innerHTML = savedTests.map(test => `
-      <div class="banner-card ${test.winner === 'yours' ? 'winner-yours' : 'winner-test'}" 
-           data-test-id="${test.id}" onclick="TestingTab.loadTest('${test.id}')">
-        <div class="banner-card-header">
-          <span class="banner-card-type">${test.club_a?.clubType || 'Club'} Test</span>
-          <span class="banner-card-date">${formatDate(test.created_at)}</span>
-        </div>
-        <div class="banner-card-title">
-          ${test.winner === 'test' ? '🏆 Test Club Won' : '✓ Your Club Won'}
-        </div>
-        <div class="banner-card-subtitle">
-          ${test.club_a?.name || 'Your Club'} vs ${test.club_b?.name || 'Test Club'}
-        </div>
-        <div class="banner-card-metrics">
-          ${test.net_gains?.carry ? `+${test.net_gains.carry} yds` : ''} 
-          ${test.net_gains?.ballSpeed ? `+${test.net_gains.ballSpeed} mph` : ''}
-        </div>
-        <button class="banner-card-delete" onclick="event.stopPropagation(); TestingTab.deleteTest('${test.id}')">
-          🗑️
-        </button>
+    container.innerHTML = `
+      <div class="banner-cards-scroll" style="display: flex; gap: 12px; overflow-x: auto; padding: 12px 0;">
+        ${savedTests.map(test => {
+          // Determine winner display - winner is 'a', 'b', or 'tie'
+          const bWins = test.winner === 'b';
+          const aWins = test.winner === 'a';
+          const isTie = test.winner === 'tie';
+          
+          // Club names
+          const clubAName = test.club_a?.brand && test.club_a?.model 
+            ? `${test.club_a.brand} ${test.club_a.model}` 
+            : test.club_a?.clubType || 'Your Club';
+          const clubBName = test.club_b?.name || 
+            (test.club_b?.brand && test.club_b?.model ? `${test.club_b.brand} ${test.club_b.model}` : 'Test Club');
+          
+          // Format net gains
+          const carryGain = test.net_gains?.carry || 0;
+          const carryText = carryGain > 0 ? `+${Math.round(carryGain)} yds` : 
+                           carryGain < 0 ? `${Math.round(carryGain)} yds` : '';
+          
+          // Format date
+          const dateStr = formatDate(test.created_at);
+          
+          // Winner styling
+          const cardBg = bWins ? 'var(--green-dim)' : aWins ? 'var(--cyan-dim)' : 'var(--bg-card)';
+          const cardBorder = bWins ? 'var(--green)' : aWins ? 'var(--cyan)' : 'var(--border-light)';
+          const winnerIcon = bWins ? '🏆' : aWins ? '✓' : '🤝';
+          const winnerText = bWins ? 'Test Club Won' : aWins ? 'Your Club Won' : 'Tie';
+          
+          return `
+            <div class="banner-card" 
+                 style="min-width: 200px; background: ${cardBg}; border: 1px solid ${cardBorder}; border-radius: 12px; padding: 12px; cursor: pointer; position: relative;"
+                 data-test-id="${test.id}" 
+                 onclick="TestingTab.loadTest('${test.id}')">
+              <div class="banner-card-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span style="font-size: 11px; text-transform: uppercase; color: var(--text-muted);">${test.club_a?.clubType || 'Club'} Test</span>
+                <span style="font-size: 11px; color: var(--text-muted);">${dateStr}</span>
+              </div>
+              <div class="banner-card-title" style="font-weight: 600; margin-bottom: 4px;">
+                ${winnerIcon} ${winnerText}
+              </div>
+              <div class="banner-card-subtitle" style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">
+                vs ${clubBName}
+              </div>
+              ${carryText ? `
+                <div class="banner-card-metrics" style="font-size: 14px; font-weight: 600; color: ${bWins ? 'var(--green)' : 'var(--cyan)'};">
+                  ${carryText}
+                </div>
+              ` : ''}
+              <button class="banner-card-delete" 
+                      style="position: absolute; top: 8px; right: 8px; background: none; border: none; cursor: pointer; opacity: 0.5; font-size: 12px;"
+                      onclick="event.stopPropagation(); TestingTab.deleteTest('${test.id}')">
+                🗑️
+              </button>
+            </div>
+          `;
+        }).join('')}
       </div>
-    `).join('');
+    `;
   }
 
   /**
@@ -198,83 +256,104 @@ const TestingTab = (function() {
       '2-hybrid': 9, '2h': 9, '3-hybrid': 10, '3h': 10, '4-hybrid': 11, '4h': 11, '5-hybrid': 12, '5h': 12,
       '4-iron': 19, '4i': 19, '5-iron': 20, '5i': 20, '6-iron': 21, '6i': 21, '7-iron': 22, '7i': 22, 
       '8-iron': 23, '8i': 23, '9-iron': 24, '9i': 24, 'pw': 25, 'pitching wedge': 25,
-      'gw': 30, 'gap wedge': 30, '50': 31, '52': 32, 'sw': 33, 'sand wedge': 33, '54': 34, '56': 35, 
-      'lw': 36, 'lob wedge': 36, '58': 37, '60': 38 
+      'gw': 26, 'gap wedge': 26, '50°': 26, '52°': 27, 'sw': 28, 'sand wedge': 28, '54°': 28, '56°': 29,
+      'lw': 30, 'lob wedge': 30, '58°': 30, '60°': 31, '62°': 32,
+      'putter': 40
     };
     
-    // Helper to determine true category (PW, GW, SW, LW should be wedges)
+    // Helper to get true category
     function getTrueCategory(club) {
-      const clubType = club.clubType?.toLowerCase() || '';
-      const originalCat = club.category?.toLowerCase() || '';
+      const clubType = (club.clubType || '').toLowerCase();
       
-      // Wedges: PW, GW, SW, LW, or degree-based wedges
-      if (['pw', 'gw', 'sw', 'lw', 'pitching wedge', 'gap wedge', 'sand wedge', 'lob wedge'].includes(clubType) ||
-          clubType.includes('wedge') || /^\d{2}$/.test(clubType) || /^\d{2}°?$/.test(clubType)) {
+      // Driver
+      if (clubType === 'driver') return 'woods';
+      
+      // Woods
+      if (clubType.includes('wood') || clubType.match(/^\d+w$/)) return 'woods';
+      
+      // Hybrids
+      if (clubType.includes('hybrid') || clubType.includes('rescue') || clubType.match(/^\d+h$/)) return 'hybrids';
+      
+      // Wedges - check BEFORE irons since PW could match both
+      if (clubType === 'pw' || clubType === 'pitching wedge' ||
+          clubType === 'gw' || clubType === 'gap wedge' ||
+          clubType === 'sw' || clubType === 'sand wedge' ||
+          clubType === 'lw' || clubType === 'lob wedge' ||
+          clubType.match(/^\d{2}°?$/)) {
         return 'wedges';
       }
       
-      // Woods: Driver, X-Wood
-      if (clubType === 'driver' || clubType.includes('wood') || originalCat === 'woods') {
-        return 'woods';
-      }
+      // Irons
+      if (clubType.includes('iron') || clubType.match(/^\d+i$/)) return 'irons';
       
-      // Hybrids: XH, X-Hybrid
-      if (clubType.includes('hybrid') || /^\d+h$/i.test(clubType) || originalCat === 'hybrids') {
-        return 'hybrids';
-      }
+      // Putter
+      if (clubType === 'putter') return 'putters';
       
-      // Default to irons
-      return 'irons';
+      // Fallback to stored category or default
+      return club.category || 'other';
     }
     
-    // Group clubs by category for display (case-insensitive)
+    // Group clubs by category
     const categories = {
-      'Woods': userClubs.filter(c => getTrueCategory(c) === 'woods'),
-      'Hybrids': userClubs.filter(c => getTrueCategory(c) === 'hybrids'),
-      'Irons': userClubs.filter(c => getTrueCategory(c) === 'irons'),
-      'Wedges': userClubs.filter(c => getTrueCategory(c) === 'wedges')
+      woods: { label: '🌲 WOODS', clubs: [] },
+      hybrids: { label: '🔀 HYBRIDS', clubs: [] },
+      irons: { label: '⛳ IRONS', clubs: [] },
+      wedges: { label: '🎯 WEDGES', clubs: [] },
+      putters: { label: '⛳ PUTTERS', clubs: [] }
     };
-    
-    // Sort each category
-    Object.values(categories).forEach(arr => {
-      arr.sort((a, b) => (sortOrder[a.clubType?.toLowerCase()] || 50) - (sortOrder[b.clubType?.toLowerCase()] || 50));
-    });
     
     console.log('🔍 Categories:', categories);
     
+    // Sort and categorize clubs
+    const sortedClubs = [...userClubs].sort((a, b) => {
+      const orderA = sortOrder[(a.clubType || '').toLowerCase()] || 50;
+      const orderB = sortOrder[(b.clubType || '').toLowerCase()] || 50;
+      return orderA - orderB;
+    });
+    
+    sortedClubs.forEach(club => {
+      const cat = getTrueCategory(club);
+      if (categories[cat]) {
+        categories[cat].clubs.push(club);
+      }
+    });
+    
+    // Build HTML
     let html = '';
-    for (const [category, clubs] of Object.entries(categories)) {
-      if (clubs.length === 0) continue;
+    Object.entries(categories).forEach(([key, cat]) => {
+      if (cat.clubs.length === 0) return;
       
-      // Add category header
-      html += `<div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; margin: 12px 0 8px 0; padding-left: 4px;">${category}</div>`;
+      html += `<div class="club-category-header" style="font-size: 11px; text-transform: uppercase; color: var(--text-muted); margin: 16px 0 8px 0; font-weight: 600;">${cat.label}</div>`;
       
-      clubs.forEach(club => {
-        const testCount = savedTests.filter(t => t.club_a?.id === club.id).length;
+      cat.clubs.forEach(club => {
+        const specs = club.shaft?.name || club.shaftModel || '';
         html += `
-          <div class="club-select-item" data-club-id="${club.id}" onclick="TestingTab.selectClub('${club.id}', this)">
-            <div class="club-select-icon">🏌️</div>
-            <div class="club-select-info">
-              <div class="club-select-name">${club.clubType}</div>
-              <div class="club-select-specs">${club.brand} ${club.model} • ${club.loft || ''}°</div>
+          <div class="club-select-item" 
+               data-club-id="${club.id}"
+               data-club-type="${club.clubType}"
+               onclick="TestingTab.selectClub('${club.id}', this)"
+               style="display: flex; align-items: center; padding: 12px; background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 8px; margin-bottom: 8px; cursor: pointer;">
+            <div class="club-select-icon" style="font-size: 20px; margin-right: 12px;">🏌️</div>
+            <div class="club-select-info" style="flex: 1;">
+              <div style="font-weight: 600;">${club.clubType}</div>
+              <div style="font-size: 12px; color: var(--text-muted);">${club.brand || ''} ${club.model || ''}</div>
+              ${specs ? `<div style="font-size: 11px; color: var(--text-muted);">${specs}</div>` : ''}
             </div>
-            <span class="club-select-count">${testCount} tests</span>
           </div>
         `;
       });
-    }
+    });
     
-    container.innerHTML = html;
+    container.innerHTML = html || '<div style="text-align: center; padding: 20px; color: var(--text-muted);">No clubs in bag</div>';
   }
 
   /**
-   * Select a club from bag (Step 1)
+   * Select a club for testing (Step 1)
    */
   function selectClub(clubId, element) {
     const club = userClubs.find(c => c.id === clubId);
     if (!club) return;
     
-    // Update state
     currentTest.clubA = club;
     
     // Sync with global perfTestState for inline functions
@@ -282,99 +361,86 @@ const TestingTab = (function() {
       perfTestState.selectedClub = club;
     }
     
-    // Update UI
-    document.querySelectorAll('.club-select-item').forEach(item => 
-      item.classList.remove('selected')
-    );
-    element.classList.add('selected');
+    // Update UI selection
+    document.querySelectorAll('.club-select-item').forEach(el => {
+      el.style.border = '1px solid var(--border-light)';
+      el.style.background = 'var(--bg-card)';
+    });
+    element.style.border = '2px solid var(--cyan)';
+    element.style.background = 'var(--cyan-dim)';
     
-    // Enable next button
-    document.getElementById('test-step1-next').disabled = false;
+    // Enable Next button
+    const nextBtn = document.getElementById('test-step1-next');
+    if (nextBtn) nextBtn.disabled = false;
     
-    // Update step 2 display
-    updateClubADisplay();
+    console.log('✅ Selected club for testing:', club.clubType);
   }
 
   /**
-   * Go to a specific step
+   * Navigate to a wizard step
    */
   function goToStep(step) {
-    // Validate step transitions
-    if (step === 2 && !currentTest.clubA) return;
-    if (step === 3 && !currentTest.clubB) return;
-    if (step === 4 && !hasValidData()) return;
+    // Update progress indicators
+    for (let i = 1; i <= 5; i++) {
+      const progressEl = document.getElementById('test-progress-' + i);
+      if (progressEl) {
+        progressEl.classList.toggle('active', i <= step);
+        progressEl.classList.toggle('completed', i < step);
+      }
+    }
+    
+    // Show/hide step content
+    document.querySelectorAll('#tab-testing .scenario-step').forEach(s => s.classList.remove('active'));
+    const stepEl = document.getElementById('test-step-' + step);
+    if (stepEl) stepEl.classList.add('active');
     
     currentTest.step = step;
     
-    // Update progress indicators
-    for (let i = 1; i <= 5; i++) {
-      const el = document.getElementById('test-progress-' + i);
-      if (!el) continue;
-      el.classList.remove('active', 'complete');
-      if (i < step) el.classList.add('complete');
-      if (i === step) el.classList.add('active');
+    // Step-specific setup
+    if (step === 2) {
+      updateClubADisplay();
+    } else if (step === 3) {
+      updateClubADisplay();
+      updateClubBDisplay();
     }
-    
-    // Show correct step
-    document.querySelectorAll('.test-step').forEach(s => 
-      s.classList.remove('active')
-    );
-    document.getElementById('test-step-' + step).classList.add('active');
   }
 
   /**
    * Open ClubSelector for comparison club (Step 2)
    */
   function openComparisonSelector() {
-    if (typeof ClubSelector === 'undefined' || !ClubSelector.isReady()) {
-      console.warn('ClubSelector not available, use manual entry');
-      alert('Club database not loaded. Please use manual entry below.');
+    if (!currentTest.clubA) {
+      alert('Please select your club first');
       return;
     }
     
-    const clubType = currentTest.clubA?.clubType || 'Driver';
-    const category = currentTest.clubA?.category || 'woods';
+    const clubType = currentTest.clubA.clubType;
     
-    // Use ClubSelector in 'known-type' mode - locks to same club type
+    // Open ClubSelector in known-type mode
     ClubSelector.open({
       mode: 'known-type',
       clubType: clubType,
-      category: category,
       title: `Select ${clubType} to Compare`,
-      onSelect: (result) => {
-        const clubB = {
-          brand: result.brand,
-          model: result.model,
-          name: `${result.brand} ${result.model}`,
-          clubType: clubType, // Same as Club A
-          year: result.year,
-          clubHeadSpecId: result.clubHeadSpecId,
-          shaftBrand: result.shaftBrand,
-          shaftModel: result.shaftModel,
-          shaft: result.shaftBrand && result.shaftModel ? `${result.shaftBrand} ${result.shaftModel}` : 'Stock Shaft',
-          specs: result.specs,
-          isManual: false
+      onSelect: (selectedClub) => {
+        currentTest.clubB = {
+          name: `${selectedClub.brand} ${selectedClub.model}`,
+          brand: selectedClub.brand,
+          model: selectedClub.model,
+          shaft: selectedClub.shaft,
+          specs: selectedClub.specs,
+          source: 'database'
         };
-        
-        currentTest.clubB = clubB;
-        updateClubBDisplay();
-        document.getElementById('test-step2-next').disabled = false;
         
         // Sync with global perfTestState for inline functions
         if (typeof perfTestState !== 'undefined') {
-          perfTestState.compareClub = clubB;
+          perfTestState.compareClub = currentTest.clubB;
         }
         
-        // Clear manual inputs since we used selector
-        const brandInput = document.getElementById('compare-brand-manual');
-        const modelInput = document.getElementById('compare-model-manual');
-        const shaftInput = document.getElementById('compare-shaft-manual');
-        if (brandInput) brandInput.value = '';
-        if (modelInput) modelInput.value = '';
-        if (shaftInput) shaftInput.value = '';
-      },
-      onCancel: () => {
-        console.log('Club selection cancelled');
+        updateClubBDisplay();
+        
+        // Enable next button
+        const nextBtn = document.getElementById('test-step2-next');
+        if (nextBtn) nextBtn.disabled = false;
       }
     });
   }
@@ -383,159 +449,82 @@ const TestingTab = (function() {
   // DATA CAPTURE (Step 3)
   // ============================================
 
-  /**
-   * Handle photo capture for Club A
-   */
   function capturePhotoA() {
-    // TODO: Integrate with photo capture / Vision API
-    console.log('Photo capture for Club A');
-    showManualEntryA();
-  }
-
-  /**
-   * Handle photo capture for Club B
-   */
-  function capturePhotoB() {
-    // TODO: Integrate with photo capture / Vision API
-    console.log('Photo capture for Club B');
-    showManualEntryB();
-  }
-
-  /**
-   * Show manual entry form for Club A
-   */
-  function showManualEntryA() {
-    document.getElementById('photo-capture-zone-a').style.display = 'none';
+    // TODO: Implement photo capture + OCR
     document.getElementById('club-a-data').style.display = 'block';
+    document.getElementById('photo-capture-zone-a').style.display = 'none';
   }
 
-  /**
-   * Show manual entry form for Club B
-   */
-  function showManualEntryB() {
-    document.getElementById('photo-capture-zone-b').style.display = 'none';
+  function capturePhotoB() {
+    // TODO: Implement photo capture + OCR
     document.getElementById('club-b-data').style.display = 'block';
+    document.getElementById('photo-capture-zone-b').style.display = 'none';
   }
 
-  /**
-   * Check if we have valid performance data
-   */
+  function showManualEntryA() {
+    document.getElementById('club-a-data').style.display = 'block';
+    document.getElementById('photo-capture-zone-a').style.display = 'none';
+  }
+
+  function showManualEntryB() {
+    document.getElementById('club-b-data').style.display = 'block';
+    document.getElementById('photo-capture-zone-b').style.display = 'none';
+  }
+
   function hasValidData() {
-    // Minimum required: ball speed and carry distance for both clubs
-    return currentTest.clubAData.ballSpeed && currentTest.clubAData.carryDistance &&
-           currentTest.clubBData.ballSpeed && currentTest.clubBData.carryDistance;
+    const aValid = currentTest.clubAData?.ballSpeed && currentTest.clubAData?.carry;
+    const bValid = currentTest.clubBData?.ballSpeed && currentTest.clubBData?.carry;
+    return aValid && bValid;
   }
 
   // ============================================
-  // RESULTS & ANALYSIS (Step 5)
+  // COMPARISON & RESULTS (Step 4-5)
   // ============================================
 
-  /**
-   * Run the comparison analysis
-   */
   async function runComparison() {
-    // Check credits
-    if (!checkCredits()) return;
+    if (!hasValidData()) {
+      alert('Please enter ball speed and carry for both clubs');
+      return;
+    }
     
-    // Deduct credit
-    deductCredit();
-    
-    // Calculate winner and net gains
     calculateResults();
-    
-    // Generate AI analysis (or mock for now)
-    await generateAIAnalysis();
-    
-    // Display results
     displayResults();
-    
-    // Move to step 5
     goToStep(5);
   }
 
-  /**
-   * Calculate winner and net gains
-   */
   function calculateResults() {
-    const a = currentTest.clubAData;
-    const b = currentTest.clubBData;
+    const dataA = currentTest.clubAData;
+    const dataB = currentTest.clubBData;
     
-    // Simple comparison: total distance wins
-    const totalA = parseFloat(a.totalDistance) || parseFloat(a.carryDistance) || 0;
-    const totalB = parseFloat(b.totalDistance) || parseFloat(b.carryDistance) || 0;
+    const carryDiff = (dataB.carry || 0) - (dataA.carry || 0);
     
-    currentTest.winner = totalB > totalA ? 'test' : 'yours';
-    
-    currentTest.netGains = {
-      carry: Math.round((parseFloat(b.carryDistance) || 0) - (parseFloat(a.carryDistance) || 0)),
-      ballSpeed: Math.round((parseFloat(b.ballSpeed) || 0) - (parseFloat(a.ballSpeed) || 0)),
-      spin: Math.round((parseFloat(b.spinRate) || 0) - (parseFloat(a.spinRate) || 0))
-    };
-  }
-
-  /**
-   * Display comparison results
-   */
-  function displayResults() {
-    const resultsContainer = document.getElementById('test-results');
-    if (!resultsContainer) return;
-    
-    // Update winner display
-    const isTestWinner = currentTest.winner === 'test';
-    
-    // TODO: Update all result elements with currentTest data
-    console.log('Results:', currentTest);
-  }
-
-  // ============================================
-  // SAVE / DELETE / LOAD
-  // ============================================
-
-  /**
-   * Save current test to Firestore
-   */
-  async function saveTest() {
-    // Check if at max capacity
-    if (savedTests.length >= MAX_SAVED_TESTS) {
-      // Delete oldest test
-      const oldest = savedTests[savedTests.length - 1];
-      await deleteTest(oldest.id, true); // silent delete
+    if (carryDiff > 2) {
+      currentTest.winner = 'b';
+    } else if (carryDiff < -2) {
+      currentTest.winner = 'a';
+    } else {
+      currentTest.winner = 'tie';
     }
     
-    const testData = {
-      created_at: new Date(),
-      club_a: {
-        id: currentTest.clubA.id,
-        clubType: currentTest.clubA.clubType,
-        name: `${currentTest.clubA.brand} ${currentTest.clubA.model}`,
-        brand: currentTest.clubA.brand,
-        model: currentTest.clubA.model
-      },
-      club_b: {
-        name: currentTest.clubB.name || `${currentTest.clubB.brand} ${currentTest.clubB.model}`,
-        brand: currentTest.clubB.brand,
-        model: currentTest.clubB.model,
-        shaft: currentTest.clubB.shaft
-      },
-      club_a_data: currentTest.clubAData,
-      club_b_data: currentTest.clubBData,
-      goals: currentTest.goals,
-      winner: currentTest.winner,
-      net_gains: currentTest.netGains,
-      ai_analysis: currentTest.aiAnalysis,
-      applied_to_scenario: false
+    currentTest.netGains = {
+      carry: carryDiff,
+      ballSpeed: (dataB.ballSpeed || 0) - (dataA.ballSpeed || 0),
+      spin: (dataB.spin || 0) - (dataA.spin || 0)
     };
-    
-    const docRef = await db.collection('users').doc(userId)
-      .collection('tests').add(testData);
-    
-    console.log('✅ Test saved:', docRef.id);
-    
-    // Refresh saved tests
-    await loadSavedTests();
-    renderBannerCards();
-    
-    showToast('Test saved!');
+  }
+
+  function displayResults() {
+    // Results are displayed by the inline populateTestResults() function
+    // This just sets up any module-specific display
+  }
+
+  // ============================================
+  // SAVE/DELETE/LOAD TESTS
+  // ============================================
+
+  async function saveTest() {
+    // This is handled by the global saveTest() function in index.html
+    // which writes to Firestore and then calls refreshTests()
   }
 
   /**
@@ -544,16 +533,25 @@ const TestingTab = (function() {
   async function deleteTest(testId, silent = false) {
     if (!silent && !confirm('Delete this saved test?')) return;
     
-    await db.collection('users').doc(userId)
-      .collection('tests').doc(testId).delete();
-    
-    console.log('✅ Test deleted:', testId);
-    
-    // Refresh
-    await loadSavedTests();
-    renderBannerCards();
-    
-    if (!silent) showToast('Test deleted');
+    try {
+      await db.collection('users').doc(userId)
+        .collection('tests').doc(testId).delete();
+      
+      console.log('✅ Test deleted:', testId);
+      
+      // Refresh
+      await loadSavedTests();
+      renderBannerCards();
+      
+      if (!silent && typeof showToast === 'function') {
+        showToast('Test deleted', 'success');
+      }
+    } catch (error) {
+      console.error('Error deleting test:', error);
+      if (typeof showToast === 'function') {
+        showToast('Failed to delete test', 'error');
+      }
+    }
   }
 
   /**
@@ -568,16 +566,30 @@ const TestingTab = (function() {
       step: 5,
       clubA: test.club_a,
       clubB: test.club_b,
-      clubAData: test.club_a_data,
-      clubBData: test.club_b_data,
+      clubAData: test.club_a_data || {},
+      clubBData: test.club_b_data || {},
       goals: test.goals || [],
       winner: test.winner,
-      aiAnalysis: test.ai_analysis,
-      netGains: test.net_gains
+      aiAnalysis: test.ai_summary,
+      netGains: test.net_gains || {}
     };
     
-    // Display results
-    displayResults();
+    // Sync with global perfTestState
+    if (typeof perfTestState !== 'undefined') {
+      perfTestState.selectedClub = test.club_a;
+      perfTestState.compareClub = test.club_b;
+      perfTestState.clubAData = test.club_a_data || {};
+      perfTestState.clubBData = test.club_b_data || {};
+      perfTestState.goals = test.goals || [];
+      perfTestState.isComplete = true;
+    }
+    
+    // Populate results using the inline function
+    if (typeof populateTestResults === 'function') {
+      populateTestResults();
+    }
+    
+    // Navigate to results step
     goToStep(5);
   }
 
@@ -585,14 +597,8 @@ const TestingTab = (function() {
   // ADD TO SCENARIO (with teaser)
   // ============================================
 
-  /**
-   * Show teaser grade preview (FREE)
-   */
   async function showTeaserPreview() {
-    // Call gradeUserBag with scenario mode to get grade change
-    // But only show teaser: "B+ → A-"
-    
-    // TODO: Implement API call for teaser
+    // TODO: Implement API call for teaser grade preview
     const teaser = {
       currentGrade: 'B+',
       projectedGrade: 'A-',
@@ -600,31 +606,25 @@ const TestingTab = (function() {
     };
     
     const teaserEl = document.getElementById('teaser-preview');
-    teaserEl.innerHTML = `
-      <div class="teaser-grades">
-        <span class="teaser-current">${teaser.currentGrade}</span>
-        <span class="teaser-arrow">→</span>
-        <span class="teaser-projected ${teaser.improved ? 'improved' : ''}">${teaser.projectedGrade}</span>
-      </div>
-      <p>Adding ${currentTest.clubB.name} would ${teaser.improved ? 'improve' : 'change'} your bag grade</p>
-      <button class="btn btn-primary" onclick="TestingTab.addToScenarioFull()">
-        See Full Analysis (1 credit)
-      </button>
-    `;
-    teaserEl.style.display = 'block';
+    if (teaserEl) {
+      teaserEl.innerHTML = `
+        <div class="teaser-grades">
+          <span class="teaser-current">${teaser.currentGrade}</span>
+          <span class="teaser-arrow">→</span>
+          <span class="teaser-projected ${teaser.improved ? 'improved' : ''}">${teaser.projectedGrade}</span>
+        </div>
+        <p>Adding ${currentTest.clubB?.name || 'Test Club'} would ${teaser.improved ? 'improve' : 'change'} your bag grade</p>
+        <button class="btn btn-primary" onclick="TestingTab.addToScenarioFull()">
+          See Full Analysis (1 credit)
+        </button>
+      `;
+      teaserEl.style.display = 'block';
+    }
   }
 
-  /**
-   * Add winner to scenario with full analysis (1 credit)
-   */
   async function addToScenarioFull() {
-    if (!checkCredits()) return;
-    deductCredit();
-    
-    // Navigate to Scenarios tab with winner pre-loaded
-    // ScenariosTab.addClubFromTest(currentTest.winner === 'test' ? currentTest.clubB : currentTest.clubA);
-    
-    showClientTab('scenarios');
+    // TODO: Implement full scenario creation with credit deduction
+    alert('Add to Scenario feature coming soon!');
   }
 
   // ============================================
@@ -638,50 +638,59 @@ const TestingTab = (function() {
   }
 
   function checkCredits() {
-    // TODO: Integrate with credit system
+    // TODO: Implement credit checking
     return true;
   }
 
   function deductCredit() {
-    // TODO: Integrate with credit system
-    console.log('Credit deducted');
+    // TODO: Implement credit deduction
   }
 
-  function showToast(message) {
-    // TODO: Implement toast notification
-    console.log('Toast:', message);
+  function showToast(message, type = 'info') {
+    if (typeof window.showToast === 'function') {
+      window.showToast(message, type);
+    } else {
+      console.log(`Toast (${type}): ${message}`);
+    }
   }
 
   function updateClubADisplay() {
     const club = currentTest.clubA;
     if (!club) return;
     
-    // Update various display elements
-    const elements = ['step2-your-club', 'step3-your-club'];
-    elements.forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.textContent = club.clubType;
-    });
+    // Step 2 display
+    const step2Name = document.getElementById('step2-your-club');
+    const step2Specs = document.getElementById('step2-your-specs');
+    if (step2Name) step2Name.textContent = club.clubType || 'Club';
+    if (step2Specs) step2Specs.textContent = `${club.brand || ''} ${club.model || ''}`.trim();
     
-    const specElements = ['step2-your-specs', 'step3-your-specs'];
-    specElements.forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.textContent = `${club.brand} ${club.model} • ${club.loft || ''}°`;
-    });
+    // Step 3 display
+    const step3Name = document.getElementById('step3-your-club');
+    const step3Specs = document.getElementById('step3-your-specs');
+    if (step3Name) step3Name.textContent = club.clubType || 'Club';
+    if (step3Specs) step3Specs.textContent = `${club.brand || ''} ${club.model || ''}`.trim();
   }
 
   function updateClubBDisplay() {
     const club = currentTest.clubB;
     if (!club) return;
     
-    document.getElementById('compare-preview').style.display = 'block';
-    document.getElementById('compare-preview-name').textContent = club.name || `${club.brand} ${club.model}`;
-    document.getElementById('compare-preview-specs').textContent = club.shaft || club.shaftModel || 'Stock Shaft';
+    // Show preview card
+    const preview = document.getElementById('compare-preview');
+    if (preview) preview.style.display = 'block';
+    
+    const previewName = document.getElementById('compare-preview-name');
+    const previewSpecs = document.getElementById('compare-preview-specs');
+    if (previewName) previewName.textContent = club.name || `${club.brand} ${club.model}`;
+    if (previewSpecs) previewSpecs.textContent = club.shaft || 'Stock Shaft';
+    
+    // Step 3 display
+    const step3Name = document.getElementById('step3-compare-club');
+    const step3Specs = document.getElementById('step3-compare-specs');
+    if (step3Name) step3Name.textContent = club.name || `${club.brand} ${club.model}`;
+    if (step3Specs) step3Specs.textContent = club.shaft || 'Stock Shaft';
   }
 
-  /**
-   * Update comparison club from manual entry
-   */
   function updateManualCompare() {
     const brand = document.getElementById('compare-brand-manual')?.value?.trim();
     const model = document.getElementById('compare-model-manual')?.value?.trim();
@@ -689,40 +698,48 @@ const TestingTab = (function() {
     
     if (brand && model) {
       currentTest.clubB = {
+        name: `${brand} ${model}`,
         brand: brand,
         model: model,
-        name: `${brand} ${model}`,
-        shaft: shaft || 'Stock Shaft',
-        isManual: true
+        shaft: shaft || null,
+        source: 'manual'
       };
-      updateClubBDisplay();
-      document.getElementById('test-step2-next').disabled = false;
-    } else {
-      // Not enough info yet
-      if (!currentTest.clubB?.isManual === false) {
-        // Only clear if it was a manual entry
-        currentTest.clubB = null;
-        document.getElementById('compare-preview').style.display = 'none';
-        document.getElementById('test-step2-next').disabled = true;
+      
+      // Sync with global perfTestState
+      if (typeof perfTestState !== 'undefined') {
+        perfTestState.compareClub = currentTest.clubB;
       }
+      
+      updateClubBDisplay();
+      
+      // Enable next button
+      const nextBtn = document.getElementById('test-step2-next');
+      if (nextBtn) nextBtn.disabled = false;
     }
   }
 
-  /**
-   * Clear comparison club selection
-   */
   function clearComparisonClub() {
     currentTest.clubB = null;
-    document.getElementById('compare-preview').style.display = 'none';
-    document.getElementById('test-step2-next').disabled = true;
     
-    // Clear manual inputs
-    const brandInput = document.getElementById('compare-brand-manual');
-    const modelInput = document.getElementById('compare-model-manual');
-    const shaftInput = document.getElementById('compare-shaft-manual');
-    if (brandInput) brandInput.value = '';
-    if (modelInput) modelInput.value = '';
-    if (shaftInput) shaftInput.value = '';
+    if (typeof perfTestState !== 'undefined') {
+      perfTestState.compareClub = null;
+    }
+    
+    // Hide preview
+    const preview = document.getElementById('compare-preview');
+    if (preview) preview.style.display = 'none';
+    
+    // Clear manual fields
+    const brandEl = document.getElementById('compare-brand-manual');
+    const modelEl = document.getElementById('compare-model-manual');
+    const shaftEl = document.getElementById('compare-shaft-manual');
+    if (brandEl) brandEl.value = '';
+    if (modelEl) modelEl.value = '';
+    if (shaftEl) shaftEl.value = '';
+    
+    // Disable next button
+    const nextBtn = document.getElementById('test-step2-next');
+    if (nextBtn) nextBtn.disabled = true;
   }
 
   function reset() {
@@ -738,19 +755,18 @@ const TestingTab = (function() {
       netGains: {}
     };
     
-    // Reset UI elements
-    document.querySelectorAll('.club-select-item').forEach(item => 
-      item.classList.remove('selected')
-    );
-    document.getElementById('test-step1-next').disabled = true;
-    document.getElementById('compare-preview').style.display = 'none';
+    // Clear UI selections
+    document.querySelectorAll('.club-select-item').forEach(el => {
+      el.style.border = '1px solid var(--border-light)';
+      el.style.background = 'var(--bg-card)';
+    });
     
+    clearComparisonClub();
     goToStep(1);
   }
 
   async function generateAIAnalysis() {
-    // TODO: Call Claude API for analysis
-    currentTest.aiAnalysis = 'AI analysis will be generated here based on the comparison data.';
+    // TODO: Call AI for analysis
   }
 
   // ============================================
@@ -776,6 +792,7 @@ const TestingTab = (function() {
     showTeaserPreview,
     addToScenarioFull,
     reset,
+    refreshTests,  // NEW: Added for external refresh calls
     startTestForClub: (clubId) => {
       reset();
       const element = document.querySelector(`[data-club-id="${clubId}"]`);
