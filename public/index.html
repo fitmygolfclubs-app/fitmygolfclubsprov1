@@ -10481,16 +10481,154 @@
             document.getElementById('club-b-data').style.display = 'block';
         }
 
+        // ===========================================
+        // OCR PHOTO CAPTURE FOR LAUNCH MONITOR DATA
+        // ===========================================
+        
         function addTestPhotoA() {
-            // Simulate photo capture for Club A
-            document.getElementById('photo-capture-zone-a').innerHTML = '<div style="color: var(--green); font-size: 24px;">✓</div><div style="font-size: 13px;">Photo captured!</div>';
-            setTimeout(() => showClubAManualEntry(), 500);
+            // Create hidden file input for camera/gallery
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.capture = 'environment'; // Use back camera on mobile
+            input.onchange = (e) => handlePhotoCapture(e, 'a');
+            input.click();
         }
 
         function addTestPhotoB() {
-            // Simulate photo capture for Club B
-            document.getElementById('photo-capture-zone-b').innerHTML = '<div style="color: var(--green); font-size: 24px;">✓</div><div style="font-size: 13px;">Photo captured!</div>';
-            setTimeout(() => showClubBManualEntry(), 500);
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.capture = 'environment';
+            input.onchange = (e) => handlePhotoCapture(e, 'b');
+            input.click();
+        }
+        
+        async function handlePhotoCapture(event, clubSide) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const captureZone = document.getElementById(`photo-capture-zone-${clubSide}`);
+            const originalContent = captureZone.innerHTML;
+            
+            // Show processing state
+            captureZone.innerHTML = `
+                <div style="color: var(--cyan); font-size: 24px;">⏳</div>
+                <div style="font-size: 13px;">Processing image...</div>
+            `;
+            
+            try {
+                // Convert file to base64
+                const base64 = await fileToBase64(file);
+                
+                // Call OCR Cloud Function
+                const extractData = firebase.functions().httpsCallable('extractLaunchMonitorData');
+                
+                const clubType = clubSide === 'a' 
+                    ? perfTestState.selectedClub?.clubType 
+                    : perfTestState.compareClub?.clubType || perfTestState.selectedClub?.clubType;
+                
+                const result = await extractData({
+                    imageBase64: base64,
+                    expectedClubType: clubType,
+                    userId: window.currentClient?.id
+                });
+                
+                if (result.data.success && result.data.metrics) {
+                    // Populate form fields
+                    populateMetricsFromOCR(result.data.metrics, clubSide);
+                    
+                    // Show success
+                    captureZone.innerHTML = `
+                        <div style="color: var(--green); font-size: 24px;">✓</div>
+                        <div style="font-size: 13px;">${Object.keys(result.data.metrics).length} fields detected</div>
+                        <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">
+                            ${result.data.detectedDevice || 'Launch Monitor'} • ${Math.round(result.data.confidence * 100)}% confidence
+                        </div>
+                    `;
+                    
+                    // Show any warnings
+                    if (result.data.warnings && result.data.warnings.length > 0) {
+                        console.warn('OCR warnings:', result.data.warnings);
+                        showToast(`Review extracted values - ${result.data.warnings.length} warning(s)`, 'info');
+                    } else {
+                        showToast('Data extracted successfully!', 'success');
+                    }
+                    
+                    // Still show manual entry for review/corrections
+                    setTimeout(() => {
+                        if (clubSide === 'a') showClubAManualEntry();
+                        else showClubBManualEntry();
+                    }, 1000);
+                    
+                } else {
+                    throw new Error(result.data.error || 'No data extracted');
+                }
+                
+            } catch (error) {
+                console.error('OCR extraction failed:', error);
+                
+                // Show error state with retry option
+                captureZone.innerHTML = `
+                    <div style="color: var(--red); font-size: 24px;">⚠️</div>
+                    <div style="font-size: 13px;">Could not read image</div>
+                    <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Tap to try again or enter manually</div>
+                `;
+                
+                showToast('OCR failed - please enter data manually', 'error');
+                
+                // Fall back to manual entry
+                setTimeout(() => {
+                    if (clubSide === 'a') showClubAManualEntry();
+                    else showClubBManualEntry();
+                }, 1500);
+            }
+        }
+        
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+        
+        function populateMetricsFromOCR(metrics, clubSide) {
+            const suffix = clubSide === 'a' ? '-a' : '-b';
+            
+            // Map OCR field names to form field IDs
+            const fieldMap = {
+                ballSpeed: 'perf-ball-speed',
+                carry: 'perf-carry',
+                launch: 'perf-launch',
+                launchAngle: 'perf-launch',
+                spin: 'perf-spin',
+                spinRate: 'perf-spin',
+                clubSpeed: 'perf-club-speed',
+                totalDistance: 'perf-total',
+                attackAngle: 'perf-attack',
+                smashFactor: 'perf-smash',
+                clubPath: 'perf-path',
+                faceAngle: 'perf-face',
+                height: 'perf-height'
+            };
+            
+            for (const [ocrKey, formPrefix] of Object.entries(fieldMap)) {
+                if (metrics[ocrKey] !== undefined && metrics[ocrKey] !== null) {
+                    const field = document.getElementById(formPrefix + suffix);
+                    if (field) {
+                        field.value = metrics[ocrKey];
+                        // Highlight auto-filled fields
+                        field.style.borderColor = 'var(--green)';
+                        setTimeout(() => {
+                            field.style.borderColor = '';
+                        }, 3000);
+                    }
+                }
+            }
+            
+            console.log(`✅ Populated ${Object.keys(metrics).length} fields for Club ${clubSide.toUpperCase()} from OCR`);
         }
 
         function goToTestStep(step) {
@@ -10882,9 +11020,58 @@
             return rounded > 0 ? '+' + rounded : rounded.toString();
         }
         
-        function generateAIAnalysis(dataA, dataB, clubA, clubB, bWins) {
+        async function generateAIAnalysis(dataA, dataB, clubA, clubB, bWins) {
             const analysisEl = document.getElementById('ai-analysis-text');
             
+            // Show loading state
+            analysisEl.innerHTML = '<span style="color: var(--text-muted);">🤖 Generating personalized AI analysis...</span>';
+            
+            const clubAName = `${clubA.brand || ''} ${clubA.model || ''}`.trim() || 'Your Club';
+            const clubBName = clubB.name || `${clubB.brand || ''} ${clubB.model || ''}`.trim() || 'Test Club';
+            const clubType = clubA.clubType || 'club';
+            
+            try {
+                // Use AIRecommendations service (profile-aware)
+                if (typeof AIRecommendations !== 'undefined' && window.currentClient?.id) {
+                    const result = await AIRecommendations.analyzeTest(
+                        window.currentClient.id,
+                        {
+                            name: clubAName,
+                            brand: clubA.brand,
+                            model: clubA.model,
+                            clubType: clubA.clubType,
+                            category: clubA.category,
+                            metrics: dataA
+                        },
+                        {
+                            name: clubBName,
+                            brand: clubB.brand,
+                            model: clubB.model,
+                            shaft: clubB.shaft,
+                            metrics: dataB
+                        },
+                        perfTestState.goals || []
+                    );
+                    
+                    if (result?.recommendation) {
+                        analysisEl.textContent = result.recommendation;
+                        console.log('✅ AI analysis generated via AIRecommendations service');
+                        return;
+                    }
+                }
+                
+                // If AIRecommendations not available, throw to trigger fallback
+                throw new Error('AIRecommendations service not available');
+                
+            } catch (error) {
+                console.warn('AI API failed, using local fallback:', error);
+                // Fallback to local generation
+                generateLocalAnalysis(dataA, dataB, clubA, clubB, bWins, analysisEl);
+            }
+        }
+        
+        // Fallback local analysis (no API)
+        function generateLocalAnalysis(dataA, dataB, clubA, clubB, bWins, analysisEl) {
             const clubAName = `${clubA.brand || ''} ${clubA.model || ''}`.trim() || 'Your Club';
             const clubBName = clubB.name || 'Test Club';
             const clubType = clubA.clubType || 'club';
@@ -10912,13 +11099,6 @@
                         analysis += `The lower spin rate (${Math.abs(spinDiff)} rpm less) is helping maximize distance. `;
                     } else if (spinDiff > 200) {
                         analysis += `Note: spin is higher (+${spinDiff} rpm), which may affect performance in windy conditions. `;
-                    }
-                }
-                
-                if (dataA.launch && dataB.launch) {
-                    const launchDiff = (dataB.launch - dataA.launch).toFixed(1);
-                    if (Math.abs(launchDiff) > 1) {
-                        analysis += launchDiff > 0 ? `Higher launch angle (+${launchDiff}°) is optimizing your ball flight. ` : '';
                     }
                 }
                 
@@ -11769,5 +11949,8 @@
     <script src="bag-onboarding.js?v=1"></script>
     <script src="testing-tab.js?v=1"></script>
     <script src="pro-integration.js?v=1"></script>
+    
+    <!-- AI Recommendations Service -->
+    <script src="ai-recommendations.js?v=1"></script>
 </body>
 </html>
