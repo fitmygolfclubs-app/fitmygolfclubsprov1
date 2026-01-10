@@ -193,7 +193,11 @@ exports.extractLaunchMonitorData = functions
 function detectDeviceType(text) {
   const textLower = text.toLowerCase();
   
-  if (textLower.includes('trackman') || textLower.includes('track man')) {
+  // TrackMan detection - look for distinctive elements
+  if (textLower.includes('trackman') || 
+      textLower.includes('shot analysis') ||
+      (textLower.includes('smash fac') && textLower.includes('club path')) ||
+      (textLower.includes('attack ang') && textLower.includes('face ang'))) {
     return 'trackman';
   }
   if (textLower.includes('flightscope') || textLower.includes('mevo')) {
@@ -217,50 +221,74 @@ function detectDeviceType(text) {
 
 /**
  * Parse TrackMan display format
+ * TrackMan shows data in a table with headers and an AVG row
+ * Column order: ORDER, CARRY, TOTAL, SPIN RATE, CLUB SPEED, BALL SPEED, SMASH FAC, CLUB PATH, FACE ANG, ATTACK ANG, HEIGHT, LAUNCH ANG
  */
 function parseTrackMan(fullText, textBlocks) {
   const metrics = {};
   const warnings = [];
   let fieldsFound = 0;
   
-  const patterns = {
-    ballSpeed: /ball\s*speed[:\s]*(\d+\.?\d*)/i,
-    carry: /carry[:\s]*(\d+\.?\d*)/i,
-    totalDistance: /total[:\s]*(\d+\.?\d*)/i,
-    launchAngle: /(?:launch|v\.?\s*launch)[:\s]*(-?\d+\.?\d*)/i,
-    launchDirection: /(?:launch\s*dir|h\.?\s*launch|side)[:\s]*(-?\d+\.?\d*)/i,
-    spinRate: /(?:spin|total\s*spin)[:\s]*(\d+\.?\d*)/i,
-    spinAxis: /(?:spin\s*axis|axis)[:\s]*(-?\d+\.?\d*)/i,
-    height: /(?:height|apex)[:\s]*(\d+\.?\d*)/i,
-    landingAngle: /(?:land|descent)[:\s]*(\d+\.?\d*)/i,
-    hangTime: /(?:hang|flight)\s*time[:\s]*(\d+\.?\d*)/i,
-    clubSpeed: /club\s*speed[:\s]*(\d+\.?\d*)/i,
-    attackAngle: /(?:attack|aoa)[:\s]*(-?\d+\.?\d*)/i,
-    clubPath: /(?:club\s*)?path[:\s]*(-?\d+\.?\d*)/i,
-    faceAngle: /face(?:\s*angle)?[:\s]*(-?\d+\.?\d*)/i,
-    faceToPath: /(?:face\s*to\s*path|ftp)[:\s]*(-?\d+\.?\d*)/i,
-    dynamicLoft: /(?:dyn|dynamic)\s*loft[:\s]*(\d+\.?\d*)/i,
-    spinLoft: /spin\s*loft[:\s]*(\d+\.?\d*)/i,
-    smashFactor: /smash(?:\s*factor)?[:\s]*(\d+\.?\d*)/i
-  };
+  // Try to find the AVG row which contains averaged data
+  // AVG row format: "AVG 202.5 226.0 2850 88.4 129.1 1.46 3.0 2.4 3.3 79 15.5"
+  const avgMatch = fullText.match(/AVG\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([-\d.]+)\s+([-\d.]+)\s+([-\d.]+)\s+([\d.]+)\s+([\d.]+)/i);
   
-  for (const [key, pattern] of Object.entries(patterns)) {
-    const match = fullText.match(pattern);
-    if (match) {
-      const value = parseFloat(match[1]);
-      if (!isNaN(value)) {
-        metrics[key] = value;
-        fieldsFound++;
+  if (avgMatch) {
+    console.log('Found TrackMan AVG row:', avgMatch[0]);
+    // Map columns: CARRY, TOTAL, SPIN, CLUB_SPEED, BALL_SPEED, SMASH, PATH, FACE, ATTACK, HEIGHT, LAUNCH
+    metrics.carry = parseFloat(avgMatch[1]);
+    metrics.totalDistance = parseFloat(avgMatch[2]);
+    metrics.spinRate = parseFloat(avgMatch[3]);
+    metrics.clubSpeed = parseFloat(avgMatch[4]);
+    metrics.ballSpeed = parseFloat(avgMatch[5]);
+    metrics.smashFactor = parseFloat(avgMatch[6]);
+    metrics.clubPath = parseFloat(avgMatch[7]);
+    metrics.faceAngle = parseFloat(avgMatch[8]);
+    metrics.attackAngle = parseFloat(avgMatch[9]);
+    metrics.height = parseFloat(avgMatch[10]);
+    metrics.launchAngle = parseFloat(avgMatch[11]);
+    fieldsFound = 11;
+  } else {
+    // Try to find big display format (bottom of screen with large numbers)
+    // Format: CARRY 208.3 | TOTAL 236.5 | SPIN RATE 1886 | CLUB SPEED 86.7 | BALL SPEED 128.1 | SMASH FAC. 1.48 | CLUB PATH 1.8
+    console.log('No AVG row found, trying big display format...');
+    
+    // Look for large number displays with labels
+    const bigPatterns = {
+      carry: /CARRY\s*[\n\r]?\s*(\d+\.?\d*)/i,
+      totalDistance: /TOTAL\s*[\n\r]?\s*(\d+\.?\d*)/i,
+      spinRate: /SPIN\s*RATE\s*[\n\r]?\s*(\d+\.?\d*)/i,
+      clubSpeed: /CLUB\s*SPEED\s*[\n\r]?\s*(\d+\.?\d*)/i,
+      ballSpeed: /BALL\s*SPEED\s*[\n\r]?\s*(\d+\.?\d*)/i,
+      smashFactor: /SMASH\s*FAC\.?\s*[\n\r]?\s*(\d+\.?\d*)/i,
+      clubPath: /CLUB\s*PATH\s*[\n\r]?\s*([-\d]+\.?\d*)/i,
+      faceAngle: /FACE\s*ANG\.?\s*[\n\r]?\s*([-\d]+\.?\d*)/i,
+      attackAngle: /ATTACK\s*ANG\.?\s*[\n\r]?\s*([-\d]+\.?\d*)/i,
+      launchAngle: /LAUNCH\s*ANG\.?\s*[\n\r]?\s*([-\d]+\.?\d*)/i,
+      height: /HEIGHT\s*[\n\r]?\s*(\d+\.?\d*)/i
+    };
+    
+    for (const [key, pattern] of Object.entries(bigPatterns)) {
+      const match = fullText.match(pattern);
+      if (match) {
+        const value = parseFloat(match[1]);
+        if (!isNaN(value)) {
+          metrics[key] = value;
+          fieldsFound++;
+          console.log(`TrackMan big display: ${key} = ${value}`);
+        }
       }
     }
   }
   
-  const expectedFields = 12;
-  const confidence = Math.min(fieldsFound / expectedFields, 1.0);
-  
+  // If still no luck, try generic number extraction with context
   if (fieldsFound < 4) {
-    warnings.push('Low number of fields extracted - image may be unclear');
+    warnings.push('TrackMan format not fully recognized - using generic parser');
+    return parseGeneric(fullText, textBlocks);
   }
+  
+  const expectedFields = 11;
+  const confidence = Math.min(fieldsFound / expectedFields, 1.0);
   
   return { metrics, confidence, warnings };
 }
