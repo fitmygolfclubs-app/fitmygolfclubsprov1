@@ -54,6 +54,209 @@ const CLAUDE_API_URL = "https://api.anthropic.com/v1/messages";
 const getClaudeApiKey = () => getAnthropicKey();
 
 /**
+ * Get aggregated swing profile from user's saved tests
+ * Creates a learning loop by analyzing actual performance data
+ * 
+ * @param {FirebaseFirestore.Firestore} db - Firestore instance
+ * @param {string} userId - User ID to fetch swing data for
+ * @returns {Object} Aggregated swing profile by club type
+ */
+async function getSwingProfile(db, userId) {
+  try {
+    const testsSnapshot = await db.collection('users').doc(userId)
+      .collection('tests')
+      .orderBy('created_at', 'desc')
+      .limit(20) // Last 20 tests
+      .get();
+    
+    if (testsSnapshot.empty) {
+      return null;
+    }
+    
+    // Aggregate metrics by club type
+    const metricsByClubType = {};
+    const testResults = []; // For test history summary
+    
+    testsSnapshot.docs.forEach(doc => {
+      const test = doc.data();
+      const clubType = test.club_a?.clubType || 'unknown';
+      const clubAData = test.club_a_data || {};
+      
+      // Initialize club type if not exists
+      if (!metricsByClubType[clubType]) {
+        metricsByClubType[clubType] = {
+          count: 0,
+          smashFactor: [],
+          attackAngle: [],
+          clubPath: [],
+          faceAngle: [],
+          launchAngle: [],
+          spinRate: [],
+          ballSpeed: [],
+          clubSpeed: [],
+          carry: []
+        };
+      }
+      
+      // Collect non-null values
+      const m = metricsByClubType[clubType];
+      m.count++;
+      if (clubAData.smashFactor) m.smashFactor.push(parseFloat(clubAData.smashFactor));
+      if (clubAData.attackAngle) m.attackAngle.push(parseFloat(clubAData.attackAngle));
+      if (clubAData.clubPath) m.clubPath.push(parseFloat(clubAData.clubPath));
+      if (clubAData.faceAngle) m.faceAngle.push(parseFloat(clubAData.faceAngle));
+      if (clubAData.launch || clubAData.launchAngle) m.launchAngle.push(parseFloat(clubAData.launch || clubAData.launchAngle));
+      if (clubAData.spin || clubAData.spinRate) m.spinRate.push(parseFloat(clubAData.spin || clubAData.spinRate));
+      if (clubAData.ballSpeed) m.ballSpeed.push(parseFloat(clubAData.ballSpeed));
+      if (clubAData.clubSpeed) m.clubSpeed.push(parseFloat(clubAData.clubSpeed));
+      if (clubAData.carry) m.carry.push(parseFloat(clubAData.carry));
+      
+      // Track test results for history
+      if (test.winner && test.net_gains) {
+        testResults.push({
+          clubType,
+          myClub: `${test.club_a?.brand || ''} ${test.club_a?.model || ''}`.trim(),
+          testedClub: `${test.club_b?.brand || ''} ${test.club_b?.model || ''}`.trim(),
+          winner: test.winner,
+          carryGain: test.net_gains?.carry || 0
+        });
+      }
+    });
+    
+    // Calculate averages and insights
+    const avg = (arr) => arr.length > 0 ? (arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(1) : null;
+    
+    const swingProfile = {};
+    
+    for (const [clubType, metrics] of Object.entries(metricsByClubType)) {
+      swingProfile[clubType] = {
+        testCount: metrics.count,
+        avgSmashFactor: avg(metrics.smashFactor),
+        avgAttackAngle: avg(metrics.attackAngle),
+        avgClubPath: avg(metrics.clubPath),
+        avgFaceAngle: avg(metrics.faceAngle),
+        avgLaunchAngle: avg(metrics.launchAngle),
+        avgSpinRate: avg(metrics.spinRate),
+        avgBallSpeed: avg(metrics.ballSpeed),
+        avgClubSpeed: avg(metrics.clubSpeed),
+        avgCarry: avg(metrics.carry)
+      };
+      
+      // Add swing pattern insights
+      const insights = [];
+      
+      // Attack angle insight
+      if (metrics.attackAngle.length > 0) {
+        const avgAoA = parseFloat(avg(metrics.attackAngle));
+        if (clubType.toLowerCase().includes('driver')) {
+          if (avgAoA < 0) insights.push('Steep attack angle (negative) - may cause high spin');
+          else if (avgAoA > 5) insights.push('Very ascending strike - optimize for lower loft');
+          else if (avgAoA >= 2 && avgAoA <= 5) insights.push('Good ascending attack angle for driver');
+        } else if (clubType.toLowerCase().includes('iron')) {
+          if (avgAoA > 0) insights.push('Shallow/ascending iron strike - may cause thin hits');
+          else if (avgAoA < -6) insights.push('Very steep iron strike - consider more offset');
+        }
+      }
+      
+      // Club path insight
+      if (metrics.clubPath.length > 0) {
+        const avgPath = parseFloat(avg(metrics.clubPath));
+        if (avgPath > 4) insights.push('Strong in-to-out path (draw bias)');
+        else if (avgPath < -4) insights.push('Strong out-to-in path (fade/slice tendency)');
+        else if (avgPath >= -2 && avgPath <= 2) insights.push('Neutral swing path');
+      }
+      
+      // Face angle insight
+      if (metrics.faceAngle.length > 0) {
+        const avgFace = parseFloat(avg(metrics.faceAngle));
+        if (avgFace > 3) insights.push('Open face tendency at impact');
+        else if (avgFace < -3) insights.push('Closed face tendency at impact');
+      }
+      
+      // Smash factor insight
+      if (metrics.smashFactor.length > 0) {
+        const avgSmash = parseFloat(avg(metrics.smashFactor));
+        if (clubType.toLowerCase().includes('driver')) {
+          if (avgSmash >= 1.48) insights.push('Excellent strike efficiency');
+          else if (avgSmash >= 1.44) insights.push('Good strike efficiency');
+          else if (avgSmash < 1.42) insights.push('Below avg strike efficiency - may benefit from more forgiving head');
+        }
+      }
+      
+      // Spin insight for driver
+      if (clubType.toLowerCase().includes('driver') && metrics.spinRate.length > 0) {
+        const avgSpin = parseFloat(avg(metrics.spinRate));
+        if (avgSpin > 3200) insights.push('High spin - consider lower-spin head or shaft');
+        else if (avgSpin < 2000) insights.push('Low spin - may need more loft or higher-spin shaft');
+        else if (avgSpin >= 2200 && avgSpin <= 2800) insights.push('Optimal spin range for distance');
+      }
+      
+      swingProfile[clubType].insights = insights;
+    }
+    
+    // Add test history summary
+    swingProfile._testHistory = testResults.slice(0, 5); // Last 5 test results
+    swingProfile._totalTests = testsSnapshot.size;
+    
+    return swingProfile;
+    
+  } catch (error) {
+    console.error('Error fetching swing profile:', error);
+    return null;
+  }
+}
+
+/**
+ * Format swing profile for AI prompt
+ */
+function formatSwingProfileForPrompt(swingProfile) {
+  if (!swingProfile) {
+    return `\n## MEASURED SWING DATA\nNo test data available yet. Recommendations based on profile only.\n`;
+  }
+  
+  let prompt = `\n## MEASURED SWING DATA (from ${swingProfile._totalTests} performance tests)\n`;
+  prompt += `*This is actual measured data from the golfer's testing sessions - use it to personalize recommendations.*\n\n`;
+  
+  for (const [clubType, data] of Object.entries(swingProfile)) {
+    if (clubType.startsWith('_')) continue; // Skip metadata
+    
+    prompt += `### ${clubType} (${data.testCount} tests)\n`;
+    prompt += `| Metric | Avg Value |\n|--------|----------|\n`;
+    
+    if (data.avgBallSpeed) prompt += `| Ball Speed | ${data.avgBallSpeed} mph |\n`;
+    if (data.avgClubSpeed) prompt += `| Club Speed | ${data.avgClubSpeed} mph |\n`;
+    if (data.avgCarry) prompt += `| Carry | ${data.avgCarry} yds |\n`;
+    if (data.avgSmashFactor) prompt += `| Smash Factor | ${data.avgSmashFactor} |\n`;
+    if (data.avgLaunchAngle) prompt += `| Launch Angle | ${data.avgLaunchAngle}° |\n`;
+    if (data.avgSpinRate) prompt += `| Spin Rate | ${data.avgSpinRate} rpm |\n`;
+    if (data.avgAttackAngle) prompt += `| Attack Angle | ${data.avgAttackAngle}° |\n`;
+    if (data.avgClubPath) prompt += `| Club Path | ${data.avgClubPath}° |\n`;
+    if (data.avgFaceAngle) prompt += `| Face Angle | ${data.avgFaceAngle}° |\n`;
+    
+    if (data.insights && data.insights.length > 0) {
+      prompt += `\n**Swing Pattern Insights:**\n`;
+      data.insights.forEach(insight => {
+        prompt += `- ${insight}\n`;
+      });
+    }
+    prompt += '\n';
+  }
+  
+  // Add test history
+  if (swingProfile._testHistory && swingProfile._testHistory.length > 0) {
+    prompt += `### Recent Test Results\n`;
+    swingProfile._testHistory.forEach(test => {
+      const result = test.winner === 'a' ? 'Current club won' : 
+                     test.winner === 'b' ? `${test.testedClub} won (+${test.carryGain} yds)` : 'Tie';
+      prompt += `- ${test.clubType}: ${test.myClub} vs ${test.testedClub} → ${result}\n`;
+    });
+    prompt += '\n';
+  }
+  
+  return prompt;
+}
+
+/**
  * Cloud Function: generateAIRecommendation
  * 
  * This function is called when a user wants AI recommendations for their golf bag.
@@ -153,8 +356,11 @@ try {
 
     const userData = userDoc.data();
 
-    // Build the prompt for Claude
-    const prompt = buildClaudePrompt(analysisData, clubs, userData);
+    // Fetch swing profile from test data (learning loop)
+    const swingProfile = await getSwingProfile(admin.firestore(), userId);
+
+    // Build the prompt for Claude with swing data
+    const prompt = buildClaudePrompt(analysisData, clubs, userData, swingProfile);
 
     // Call Claude API
     logger.info("Calling Claude API...");
@@ -218,7 +424,7 @@ try {
 /**
  * Helper function to build the prompt for Claude
  */
-function buildClaudePrompt(analysisData, clubs, userData) {
+function buildClaudePrompt(analysisData, clubs, userData, swingProfile = null) {
   const clubsList = clubs.map((club) => {
     const rawFlex = club.shaft?.flex || club.shaft_flex;
     const normalizedFlex = rawFlex ? normalizeFlexValue(rawFlex) : 'N/A';
@@ -227,7 +433,7 @@ function buildClaudePrompt(analysisData, clubs, userData) {
     `${club.shaft?.weight || 'N/A'}g, ${club.length || 'N/A'}"`;
   }).join("\n");
 
-  return `You are an expert golf club fitter analyzing a golfer's equipment. 
+  let prompt = `You are an expert golf club fitter analyzing a golfer's equipment. 
 
 GOLFER PROFILE:
 - Handicap: ${userData.handicap || "Not provided"}
@@ -247,16 +453,24 @@ ISSUES IDENTIFIED:
 ${analysisData.issues_found.map((issue, i) => `${i + 1}. ${issue}`).join("\n")}
 
 TOP PRIORITY: ${analysisData.top_priority_fix}
+`;
 
+  // Add swing profile data if available (learning loop)
+  prompt += formatSwingProfileForPrompt(swingProfile);
+
+  prompt += `
 Please provide a detailed, encouraging analysis of this golfer's equipment setup. 
 Focus on:
 1. What they're doing well
 2. The most important improvements to make
 3. Specific, actionable recommendations
 4. How these changes will help their game
+${swingProfile ? '5. Use the measured swing data to personalize recommendations (e.g., if high spin, suggest lower-spin options)' : ''}
 
 Keep the tone professional but friendly and encouraging. Remember that golfers can be 
 sensitive about their equipment choices, so frame suggestions positively.`;
+
+  return prompt;
 }
 
 /**
@@ -6598,8 +6812,11 @@ exports.generatePersonalizedRecommendation = onCall({
       .get();
     const bagData = bagSnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
     
-    // Build personalized prompt
-    const prompt = buildPersonalizedPrompt(profile, bagData, analysisType, userQuery, additionalContext);
+    // Fetch swing profile from test data (learning loop)
+    const swingProfile = await getSwingProfile(db, targetUserId);
+    
+    // Build personalized prompt with swing data
+    const prompt = buildPersonalizedPrompt(profile, bagData, analysisType, userQuery, additionalContext, swingProfile);
     
     // Call Claude API using Anthropic SDK
     const apiKey = getAnthropicKey();
@@ -6716,7 +6933,7 @@ Give a brief (2-3 sentence) recommendation. Be specific and actionable.`;
  * Build personalized prompt from profile data
  * Incorporates communication style, goals, typical miss, and favorite club baseline
  */
-function buildPersonalizedPrompt(profile, bagData, analysisType, userQuery, additionalContext) {
+function buildPersonalizedPrompt(profile, bagData, analysisType, userQuery, additionalContext, swingProfile = null) {
   let prompt = '';
   
   // ==========================================================================
@@ -6743,6 +6960,11 @@ function buildPersonalizedPrompt(profile, bagData, analysisType, userQuery, addi
 - Favorite Club Grading: ${profile.enableFavoriteClubGrading ? 'ENABLED' : 'Disabled'}
 - Body Fit Baseline: ${profile.enableBodyFitBaseline ? 'ENABLED' : 'Disabled'}
 `;
+
+  // ==========================================================================
+  // MEASURED SWING DATA (Learning Loop)
+  // ==========================================================================
+  prompt += formatSwingProfileForPrompt(swingProfile);
 
   // ==========================================================================
   // COMMUNICATION STYLE GUIDANCE
