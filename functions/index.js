@@ -7073,3 +7073,7 @@ Answer the golfer's question with personalized context from their profile and ba
 
   return prompt;
 }
+
+// Re-export extractLaunchMonitorData from separate file
+const { extractLaunchMonitorData } = require('./extractLaunchMonitorData');
+exports.extractLaunchMonitorData = extractLaunchMonitorData;
