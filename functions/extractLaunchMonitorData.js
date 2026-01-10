@@ -74,6 +74,10 @@ exports.extractLaunchMonitorData = functions
     
     const { imageBase64, imageUrl, deviceType, expectedClubType, userId } = data;
     
+    // Debug logging
+    console.log('extractLaunchMonitorData called');
+    console.log('imageBase64 length:', imageBase64 ? imageBase64.length : 'null');
+    
     if (!imageBase64 && !imageUrl) {
       throw new functions.https.HttpsError(
         'invalid-argument', 
@@ -83,18 +87,36 @@ exports.extractLaunchMonitorData = functions
     
     try {
       // Prepare image for Vision API
-      let image;
+      let request;
       if (imageBase64) {
-        // Strip data URL prefix if present
-        const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, '');
-        image = { content: base64Data };
+        // Strip data URL prefix if present (handles various image types)
+        let base64Data = imageBase64;
+        if (base64Data.includes('base64,')) {
+          base64Data = base64Data.split('base64,')[1];
+        }
+        
+        console.log('Stripped base64 length:', base64Data ? base64Data.length : 'null');
+        
+        if (!base64Data || base64Data.length < 100) {
+          throw new Error('Base64 data is empty or too short after stripping prefix');
+        }
+        
+        // Convert to Buffer for Vision API
+        const imageBuffer = Buffer.from(base64Data, 'base64');
+        console.log('Image buffer size:', imageBuffer.length, 'bytes');
+        
+        request = {
+          image: { content: imageBuffer }
+        };
       } else {
-        image = { source: { imageUri: imageUrl } };
+        request = {
+          image: { source: { imageUri: imageUrl } }
+        };
       }
       
       // Call Vision API for text detection
       console.log('Calling Vision API for text detection...');
-      const [result] = await visionClient.textDetection(image);
+      const [result] = await visionClient.textDetection(request);
       
       if (!result.textAnnotations || result.textAnnotations.length === 0) {
         return {
