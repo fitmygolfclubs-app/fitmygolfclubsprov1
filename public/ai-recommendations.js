@@ -20,10 +20,11 @@ const AIRecommendations = {
    * @returns {Promise<object>} - { success, recommendation, profileUsed }
    */
   async generate(userId, analysisType, userQuery, additionalContext = null) {
-    const generateRec = firebase.functions().httpsCallable('generateAIRecommendation');
+    const generateRec = firebase.functions().httpsCallable('generatePersonalizedRecommendation');
     
     try {
-      showLoadingState('Generating personalized recommendation...');
+      // Show loading if function exists
+      if (typeof showLoadingState === 'function') showLoadingState('Generating personalized recommendation...');
       
       const result = await generateRec({
         userId: userId,
@@ -32,22 +33,22 @@ const AIRecommendations = {
         additionalContext: additionalContext
       });
       
-      hideLoadingState();
+      if (typeof hideLoadingState === 'function') hideLoadingState();
       return result.data;
       
     } catch (error) {
-      hideLoadingState();
+      if (typeof hideLoadingState === 'function') hideLoadingState();
       console.error('AI Recommendation error:', error);
       
       // Handle specific errors
       if (error.code === 'unauthenticated') {
-        showToast('Please log in to use AI recommendations', 'error');
+        if (typeof showToast === 'function') showToast('Please log in to use AI recommendations', 'error');
       } else if (error.code === 'permission-denied') {
-        showToast('You do not have access to this client', 'error');
+        if (typeof showToast === 'function') showToast('You do not have access to this client', 'error');
       } else if (error.message?.includes('not configured')) {
-        showToast('AI service is temporarily unavailable', 'error');
+        if (typeof showToast === 'function') showToast('AI service is temporarily unavailable', 'error');
       } else {
-        showToast('Failed to generate recommendation', 'error');
+        if (typeof showToast === 'function') showToast('Failed to generate recommendation', 'error');
       }
       
       throw error;
