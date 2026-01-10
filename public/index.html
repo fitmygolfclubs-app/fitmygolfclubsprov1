@@ -1572,9 +1572,6 @@
                         <div class="perf-test-header">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                                 <div class="perf-test-title">📊 Performance Test</div>
-                                <button class="btn btn-secondary" style="padding: 8px 12px; font-size: 12px;" onclick="openModal('saved-tests-modal')">
-                                    📁 Saved (<span id="saved-tests-count">2</span>)
-                                </button>
                             </div>
                             <div class="perf-test-subtitle">Step 1: Select YOUR club from your bag</div>
                         </div>
@@ -3235,74 +3232,39 @@
         </div>
     </div>
 
-    <!-- Saved Tests Modal -->
-    <div id="saved-tests-modal" class="modal-overlay">
-        <div class="modal" style="max-width: 500px;">
+    <!-- Saved Tests Modal REMOVED - replaced by banner cards -->
+
+    <!-- Save Test Modal (Custom styled) -->
+    <div id="save-test-modal" class="modal-overlay" style="display: none;">
+        <div class="modal" style="max-width: 420px;">
             <div class="modal-header">
-                <h3 class="modal-title">📁 Saved Tests</h3>
-                <button class="modal-close" onclick="closeModal('saved-tests-modal')">&times;</button>
+                <h3 class="modal-title">💾 Save Test</h3>
+                <button class="modal-close" onclick="closeSaveTestModal()">&times;</button>
             </div>
-
-            <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">
-                View past performance comparisons or load one to see the full analysis
+            
+            <div style="margin-bottom: 16px;">
+                <label style="display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 6px;">Test Name</label>
+                <input type="text" id="save-test-name" class="form-input" 
+                       style="width: 100%; padding: 12px; background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 8px; color: var(--text-primary); font-size: 14px;"
+                       placeholder="e.g., Driver - Callaway vs TaylorMade">
             </div>
-
-            <div id="saved-tests-list">
-                <!-- Saved Test 1 -->
-                <div class="saved-scenario-card" id="saved-test-1" onclick="loadTest(1)">
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                        <div>
-                            <div style="font-weight: 600; margin-bottom: 4px;">Driver Comparison</div>
-                            <div style="font-size: 12px; color: var(--text-muted);">Stealth 2 vs TaylorMade Qi10</div>
-                        </div>
-                        <div style="text-align: right;">
-                            <div style="font-size: 14px; font-weight: 700; color: var(--green);">🏆 Test Club Won</div>
-                            <div style="font-size: 11px; color: var(--text-muted);">Dec 27</div>
-                        </div>
-                    </div>
-                    <div style="display: flex; gap: 12px; margin-top: 8px; font-size: 11px; color: var(--text-muted);">
-                        <span>+10 yds carry</span>
-                        <span>+3 mph ball speed</span>
-                        <span>-300 rpm spin</span>
-                    </div>
-                    <div style="display: flex; gap: 8px; margin-top: 12px;">
-                        <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 11px; flex: 1;" onclick="event.stopPropagation(); loadTest(1)">View Results</button>
-                        <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 11px; flex: 1;" onclick="event.stopPropagation(); applyTestFromSaved(1)">Apply Winner</button>
-                        <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 11px; color: var(--red);" onclick="event.stopPropagation(); deleteTest(1)">🗑️</button>
-                    </div>
+            
+            <div style="background: var(--bg-card); border-radius: 8px; padding: 12px; margin-bottom: 16px;">
+                <div style="font-size: 11px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px;">Test Summary</div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                    <span style="color: var(--cyan);">Your Club:</span>
+                    <span id="save-modal-club-a" style="font-weight: 500;">--</span>
                 </div>
-
-                <!-- Saved Test 2 -->
-                <div class="saved-scenario-card" id="saved-test-2" onclick="loadTest(2)">
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                        <div>
-                            <div style="font-weight: 600; margin-bottom: 4px;">3-Wood Comparison</div>
-                            <div style="font-size: 12px; color: var(--text-muted);">Stealth 2 vs Callaway Paradym</div>
-                        </div>
-                        <div style="text-align: right;">
-                            <div style="font-size: 14px; font-weight: 700; color: var(--cyan);">Your Club Won</div>
-                            <div style="font-size: 11px; color: var(--text-muted);">Dec 20</div>
-                        </div>
-                    </div>
-                    <div style="display: flex; gap: 12px; margin-top: 8px; font-size: 11px; color: var(--text-muted);">
-                        <span>+2 yds carry</span>
-                        <span>Better dispersion</span>
-                    </div>
-                    <div style="display: flex; gap: 8px; margin-top: 12px;">
-                        <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 11px; flex: 1;" onclick="event.stopPropagation(); loadTest(2)">View Results</button>
-                        <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 11px; flex: 1;" onclick="event.stopPropagation(); applyTestFromSaved(2)">Apply Winner</button>
-                        <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 11px; color: var(--red);" onclick="event.stopPropagation(); deleteTest(2)">🗑️</button>
-                    </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="color: var(--green);">Test Club:</span>
+                    <span id="save-modal-club-b" style="font-weight: 500;">--</span>
                 </div>
             </div>
-
-            <div id="no-saved-tests" style="display: none; text-align: center; padding: 32px; color: var(--text-muted);">
-                <div style="font-size: 32px; margin-bottom: 12px;">📊</div>
-                <div>No saved tests yet</div>
-                <div style="font-size: 12px; margin-top: 4px;">Run a performance test and click "Save Test" to store it here</div>
+            
+            <div style="display: flex; gap: 12px;">
+                <button class="btn btn-secondary" onclick="closeSaveTestModal()" style="flex: 1;">Cancel</button>
+                <button class="btn btn-primary" onclick="confirmSaveTest()" style="flex: 1;">💾 Save Test</button>
             </div>
-
-            <button class="btn btn-secondary" onclick="closeModal('saved-tests-modal')" style="width: 100%; margin-top: 16px;">Close</button>
         </div>
     </div>
 
@@ -10947,7 +10909,8 @@
 
         let savedTestsCount = 2;
 
-        async function saveTest() {
+        // Open Save Test Modal
+        function saveTest() {
             // Validate we have test data
             if (!perfTestState.isComplete) {
                 showToast('No test results to save', 'error');
@@ -10961,9 +10924,31 @@
                 [perfTestState.compareClub?.brand, perfTestState.compareClub?.model].filter(Boolean).join(' ') || 'Test Club';
             
             const defaultName = `${clubType} - ${myClubName} vs ${testClubName}`;
-            const testName = prompt('Name this test:', defaultName);
             
-            if (!testName) return;
+            // Populate modal
+            document.getElementById('save-test-name').value = defaultName;
+            document.getElementById('save-modal-club-a').textContent = myClubName;
+            document.getElementById('save-modal-club-b').textContent = testClubName;
+            
+            // Show modal
+            document.getElementById('save-test-modal').style.display = 'flex';
+            document.getElementById('save-test-name').focus();
+            document.getElementById('save-test-name').select();
+        }
+        
+        function closeSaveTestModal() {
+            document.getElementById('save-test-modal').style.display = 'none';
+        }
+        
+        async function confirmSaveTest() {
+            const testName = document.getElementById('save-test-name').value.trim();
+            if (!testName) {
+                showToast('Please enter a test name', 'error');
+                return;
+            }
+            
+            // Close modal immediately
+            closeSaveTestModal();
             
             // Show loading
             showToast('Saving test...', 'info');
