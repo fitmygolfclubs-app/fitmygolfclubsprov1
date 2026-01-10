@@ -2033,6 +2033,9 @@
                             <button class="scenario-action-btn" onclick="saveTest()">
                                 💾 Save Test
                             </button>
+                            <button class="scenario-action-btn" onclick="showScenarioTeaser()" id="add-to-scenario-btn">
+                                📋 Add to Scenario <span style="font-size: 10px; color: var(--green);">FREE Preview</span>
+                            </button>
                             <button class="scenario-action-btn" onclick="applyTestClubToBag()">
                                 🔄 Replace My Club with Test Club
                             </button>
@@ -3264,6 +3267,68 @@
             <div style="display: flex; gap: 12px;">
                 <button class="btn btn-secondary" onclick="closeSaveTestModal()" style="flex: 1;">Cancel</button>
                 <button class="btn btn-primary" onclick="confirmSaveTest()" style="flex: 1;">💾 Save Test</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scenario Teaser Modal (FREE preview) -->
+    <div id="scenario-teaser-modal" class="modal-overlay" style="display: none;">
+        <div class="modal" style="max-width: 420px;">
+            <div class="modal-header">
+                <h3 class="modal-title">📋 Add to Scenario</h3>
+                <button class="modal-close" onclick="closeScenarioTeaser()">&times;</button>
+            </div>
+            
+            <!-- Teaser Content -->
+            <div id="teaser-content">
+                <!-- Loading State -->
+                <div id="teaser-loading" style="text-align: center; padding: 24px;">
+                    <div style="font-size: 32px; margin-bottom: 12px;">⏳</div>
+                    <div style="color: var(--text-muted);">Calculating grade impact...</div>
+                </div>
+                
+                <!-- Results State (hidden initially) -->
+                <div id="teaser-results" style="display: none;">
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <div style="font-size: 12px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px;">Projected Bag Grade</div>
+                        <div style="display: flex; justify-content: center; align-items: center; gap: 16px;">
+                            <div>
+                                <div style="font-size: 48px; font-weight: 700; color: var(--text-muted);" id="teaser-current-grade">B+</div>
+                                <div style="font-size: 11px; color: var(--text-muted);">Current</div>
+                            </div>
+                            <div style="font-size: 32px; color: var(--text-muted);">→</div>
+                            <div>
+                                <div style="font-size: 48px; font-weight: 700;" id="teaser-projected-grade">A-</div>
+                                <div style="font-size: 11px; color: var(--text-muted);">Projected</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="teaser-swap-summary" style="background: var(--bg-card); border-radius: 8px; padding: 12px; margin-bottom: 16px;">
+                        <div style="font-size: 11px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px;">Proposed Swap</div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="color: var(--red);" id="teaser-out-club">Callaway Elyte</span>
+                            <span style="color: var(--text-muted);">→</span>
+                            <span style="color: var(--green);" id="teaser-in-club">TaylorMade Qi4D</span>
+                        </div>
+                    </div>
+                    
+                    <div style="background: var(--cyan-dim); border-radius: 8px; padding: 12px; margin-bottom: 16px; text-align: center;">
+                        <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">Full analysis includes</div>
+                        <div style="font-size: 13px; color: var(--cyan);">✓ Detailed factor breakdown • ✓ AI recommendations • ✓ Issue detection</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 12px;">
+                <button class="btn btn-secondary" onclick="closeScenarioTeaser()" style="flex: 1;">Maybe Later</button>
+                <button class="btn btn-primary" onclick="proceedToScenario()" style="flex: 1;" id="proceed-scenario-btn" disabled>
+                    📋 Build Scenario
+                </button>
+            </div>
+            
+            <div style="text-align: center; margin-top: 12px; font-size: 11px; color: var(--text-muted);">
+                <span style="color: var(--green);">✓ FREE Preview</span> • Full scenario costs <span style="color: var(--cyan);">⚡ 1 credit</span>
             </div>
         </div>
     </div>
@@ -11150,6 +11215,222 @@
         function shopForTestClub() {
             const compareName = perfTestState.compareClub?.name || 'Test Club';
             alert('🛒 Shop modal would open with affiliate links for:\n\n• ' + compareName + '\n\nComing soon!');
+        }
+
+        // ============================================
+        // SCENARIO TEASER (Add to Scenario from Test)
+        // ============================================
+        
+        let pendingScenarioSwap = null; // Holds the swap to pre-populate
+        
+        function showScenarioTeaser() {
+            // Validate we have test data
+            if (!perfTestState.isComplete || !perfTestState.selectedClub || !perfTestState.compareClub) {
+                showToast('No test data available', 'error');
+                return;
+            }
+            
+            // Show modal with loading state
+            document.getElementById('scenario-teaser-modal').style.display = 'flex';
+            document.getElementById('teaser-loading').style.display = 'block';
+            document.getElementById('teaser-results').style.display = 'none';
+            document.getElementById('proceed-scenario-btn').disabled = true;
+            
+            // Build swap data
+            const winnerIsB = perfTestState.winner === 'b' || 
+                ((perfTestState.clubBData?.carry || 0) - (perfTestState.clubAData?.carry || 0)) > 2;
+            
+            pendingScenarioSwap = {
+                clubOut: {
+                    id: perfTestState.selectedClub.id,
+                    clubType: perfTestState.selectedClub.clubType,
+                    brand: perfTestState.selectedClub.brand,
+                    model: perfTestState.selectedClub.model,
+                    name: [perfTestState.selectedClub.brand, perfTestState.selectedClub.model].filter(Boolean).join(' ')
+                },
+                clubIn: {
+                    name: perfTestState.compareClub.name || [perfTestState.compareClub.brand, perfTestState.compareClub.model].filter(Boolean).join(' '),
+                    brand: perfTestState.compareClub.brand,
+                    model: perfTestState.compareClub.model,
+                    shaft: perfTestState.compareClub.shaft
+                },
+                testData: {
+                    carry: perfTestState.clubBData?.carry,
+                    ballSpeed: perfTestState.clubBData?.ballSpeed,
+                    netGain: (perfTestState.clubBData?.carry || 0) - (perfTestState.clubAData?.carry || 0)
+                }
+            };
+            
+            // Simulate teaser calculation (in real impl, would call gradeUserBag with preview flag)
+            calculateTeaserGrade();
+        }
+        
+        async function calculateTeaserGrade() {
+            try {
+                // Get current bag grade from UI or client data
+                const currentGrade = window.currentClient?.bag_grade || 
+                    document.getElementById('client-bag-grade')?.textContent || 'B';
+                
+                // Simulate projected grade based on test results
+                // In real implementation, call gradeUserBag Cloud Function with scenario preview mode
+                const gradeOrder = ['F', 'D-', 'D', 'D+', 'C-', 'C', 'C+', 'B-', 'B', 'B+', 'A-', 'A', 'A+'];
+                const currentIndex = gradeOrder.indexOf(currentGrade);
+                
+                // If test club won by significant margin, project improvement
+                const netGain = pendingScenarioSwap?.testData?.netGain || 0;
+                let projectedIndex = currentIndex;
+                
+                if (netGain >= 10) {
+                    projectedIndex = Math.min(currentIndex + 2, gradeOrder.length - 1);
+                } else if (netGain >= 5) {
+                    projectedIndex = Math.min(currentIndex + 1, gradeOrder.length - 1);
+                } else if (netGain <= -5) {
+                    projectedIndex = Math.max(currentIndex - 1, 0);
+                }
+                
+                const projectedGrade = gradeOrder[projectedIndex];
+                const improved = projectedIndex > currentIndex;
+                
+                // Update UI
+                document.getElementById('teaser-current-grade').textContent = currentGrade;
+                document.getElementById('teaser-projected-grade').textContent = projectedGrade;
+                document.getElementById('teaser-projected-grade').style.color = 
+                    improved ? 'var(--green)' : (projectedIndex < currentIndex ? 'var(--red)' : 'var(--text-primary)');
+                
+                document.getElementById('teaser-out-club').textContent = pendingScenarioSwap.clubOut.name;
+                document.getElementById('teaser-in-club').textContent = pendingScenarioSwap.clubIn.name;
+                
+                // Show results, hide loading
+                setTimeout(() => {
+                    document.getElementById('teaser-loading').style.display = 'none';
+                    document.getElementById('teaser-results').style.display = 'block';
+                    document.getElementById('proceed-scenario-btn').disabled = false;
+                }, 800); // Brief delay for effect
+                
+            } catch (error) {
+                console.error('Teaser calculation error:', error);
+                showToast('Could not calculate preview', 'error');
+                closeScenarioTeaser();
+            }
+        }
+        
+        function closeScenarioTeaser() {
+            document.getElementById('scenario-teaser-modal').style.display = 'none';
+            pendingScenarioSwap = null;
+        }
+        
+        function proceedToScenario() {
+            if (!pendingScenarioSwap) {
+                showToast('No swap data available', 'error');
+                return;
+            }
+            
+            // Store the pending swap for scenarios tab to pick up
+            window.pendingTestSwap = pendingScenarioSwap;
+            
+            // Close modal
+            closeScenarioTeaser();
+            
+            // Navigate to Scenarios tab
+            showClientTab('scenarios');
+            
+            // Show toast with instructions
+            showToast('Swap added! Click "Run Scenario" to analyze (1 credit)', 'info');
+            
+            // Pre-populate the scenario (slight delay for tab switch)
+            setTimeout(() => {
+                prePopulateScenarioFromTest();
+            }, 300);
+        }
+        
+        function prePopulateScenarioFromTest() {
+            const swap = window.pendingTestSwap;
+            if (!swap) return;
+            
+            // Show the swap summary area
+            const swapSummary = document.getElementById('scenario-swap-summary');
+            if (swapSummary) {
+                swapSummary.style.display = 'block';
+                document.getElementById('swap-count').textContent = '1';
+            }
+            
+            // Add the swap to the club list area
+            const clubList = document.getElementById('scenario-club-list');
+            if (clubList) {
+                // Clear any existing test swaps first
+                const existingTestSwaps = clubList.querySelectorAll('[data-from-test="true"]');
+                existingTestSwaps.forEach(el => el.remove());
+                
+                // Add the swap card
+                const swapHtml = `
+                    <div class="pending-swap-item" data-from-test="true" data-club-out-id="${swap.clubOut.id}" 
+                         style="background: var(--green-dim); border: 1px solid var(--green); border-radius: 12px; padding: 16px; margin-bottom: 12px;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                            <div style="flex: 1;">
+                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                                    <span style="font-size: 11px; padding: 2px 8px; background: var(--green); color: #000; border-radius: 4px; font-weight: 600;">FROM TEST</span>
+                                    <span style="font-size: 13px; color: var(--text-muted);">${swap.clubOut.clubType}</span>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                                    <div style="text-decoration: line-through; color: var(--red);">${swap.clubOut.name}</div>
+                                    <div style="color: var(--text-muted);">→</div>
+                                    <div style="color: var(--green); font-weight: 600;">${swap.clubIn.name}</div>
+                                </div>
+                                ${swap.testData.netGain > 0 ? `
+                                    <div style="font-size: 12px; color: var(--green); margin-top: 8px;">
+                                        📊 +${swap.testData.netGain} yds carry in performance test
+                                    </div>
+                                ` : ''}
+                            </div>
+                            <button onclick="removeTestSwap(this)" style="background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px;">✕</button>
+                        </div>
+                    </div>
+                `;
+                clubList.insertAdjacentHTML('afterbegin', swapHtml);
+            }
+            
+            // Store in scenario state for the runScenarioAnalysis function
+            scenarioState.pendingSwaps = scenarioState.pendingSwaps || [];
+            scenarioState.pendingSwaps.push({
+                type: 'swap',
+                fromTest: true,
+                clubOutId: swap.clubOut.id,
+                clubOut: swap.clubOut,
+                clubIn: swap.clubIn,
+                testData: swap.testData
+            });
+            
+            // Enable the Run button
+            const runBtn = document.getElementById('run-scenario-btn');
+            if (runBtn) {
+                runBtn.disabled = false;
+            }
+            
+            // Clear pending
+            window.pendingTestSwap = null;
+            
+            console.log('✅ Pre-populated scenario with test swap:', swap);
+        }
+        
+        function removeTestSwap(btn) {
+            const swapEl = btn.closest('.pending-swap-item');
+            const clubOutId = swapEl?.dataset?.clubOutId;
+            
+            if (swapEl) swapEl.remove();
+            
+            // Remove from scenarioState
+            if (scenarioState.pendingSwaps) {
+                scenarioState.pendingSwaps = scenarioState.pendingSwaps.filter(s => s.clubOutId !== clubOutId);
+            }
+            
+            // Update swap count
+            const remainingSwaps = document.querySelectorAll('.pending-swap-item').length;
+            document.getElementById('swap-count').textContent = remainingSwaps;
+            
+            if (remainingSwaps === 0) {
+                document.getElementById('scenario-swap-summary').style.display = 'none';
+                document.getElementById('run-scenario-btn').disabled = true;
+            }
         }
 
         function startScenarioFromTest() {
