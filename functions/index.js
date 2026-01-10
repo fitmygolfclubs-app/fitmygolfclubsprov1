@@ -18,8 +18,7 @@ admin.firestore().settings({ ignoreUndefinedProperties: true });
 
 // Helper function for Klaviyo API calls
 async function callKlaviyoAPI(endpoint, data) {
-  const config = functions.config();
-  const apiKey = config.klaviyo?.api_key;
+  const apiKey = process.env.KLAVIYO_API_KEY;
   
   if (!apiKey) {
     console.warn('Klaviyo API key not configured');
@@ -45,10 +44,9 @@ async function callKlaviyoAPI(endpoint, data) {
   }
 }
 // Claude API Configuration - SECURE: Key stored in Firebase config
-// Set with: firebase functions:config:set anthropic.api_key="your-key"
+// API key from .env file (ANTHROPIC_API_KEY=sk-ant-...)
 const getAnthropicKey = () => {
-  const config = functions.config();
-  return config.anthropic?.api_key || process.env.ANTHROPIC_API_KEY;
+  return process.env.ANTHROPIC_API_KEY;
 };
 const CLAUDE_API_URL = "https://api.anthropic.com/v1/messages";
 
@@ -6263,10 +6261,6 @@ exports.processClubPhotos = require('./processClubPhotos').processClubPhotos;
 exports.getReplacementSuggestion = require('./getReplacementSuggestion').getReplacementSuggestion; 
 exports.updateBagAfterTest = require('./updateBagAfterTest').updateBagAfterTest; 
 exports.undoBagChange = require('./undoBagChange').undoBagChange;
-
-// OCR - Extract launch monitor data from photos
-exports.extractLaunchMonitorData = require('./extractLaunchMonitorData').extractLaunchMonitorData;
-
 // GHIN Functions
 const ghinFunctions = require('./ghinFunctions_v2');
 exports.lookupGhinNumber = ghinFunctions.lookupGhinNumber;
