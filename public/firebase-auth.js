@@ -5055,14 +5055,19 @@ async function loadSavedScenarios() {
   listEl.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-muted);">Loading...</div>';
   
   try {
-    const response = await fetch(`https://getsavedscenarios-lui6djrjya-uc.a.run.app?user_id=${userId}`);
+    const response = await fetch('https://getsavedscenarios-lui6djrjya-uc.a.run.app', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ data: { user_id: userId } })
+    });
     const result = await response.json();
+    const data = result.result || result;
     
-    if (result.success && result.scenarios && result.scenarios.length > 0) {
+    if (data.success && data.scenarios && data.scenarios.length > 0) {
       if (noScenariosEl) noScenariosEl.style.display = 'none';
       
       let html = '';
-      result.scenarios.forEach(scenario => {
+      data.scenarios.forEach(scenario => {
         const typeIcon = scenario.scenario_type === 'build_from_scratch' ? '🟣' :
                          scenario.scenario_type === 'from_test' ? '🔵' : '🟢';
         const date = scenario.created_at ? 
@@ -5093,13 +5098,13 @@ async function loadSavedScenarios() {
       listEl.innerHTML = html;
       
       // AI recommendation if 2+ scenarios
-      if (result.scenarios.length >= 2 && aiSection) {
+      if (data.scenarios.length >= 2 && aiSection) {
         aiSection.style.display = 'block';
-        const best = result.scenarios.reduce((b, s) => {
+        const best = data.scenarios.reduce((b, s) => {
           const bImprove = (b.projected_score || 0) - (b.current_score || 0);
           const sImprove = (s.projected_score || 0) - (s.current_score || 0);
           return sImprove > bImprove ? s : b;
-        }, result.scenarios[0]);
+        }, data.scenarios[0]);
         const improve = (best.projected_score || 0) - (best.current_score || 0);
         document.getElementById('saved-scenarios-ai-content').innerHTML = 
           `"<strong>${best.name}</strong>" offers the best improvement at <strong>+${improve} points</strong> (${best.current_grade} → ${best.projected_grade}).`;
@@ -5129,9 +5134,14 @@ async function loadSavedScenariosCount() {
   if (!userId) return;
   
   try {
-    const response = await fetch(`https://getsavedscenarios-lui6djrjya-uc.a.run.app?user_id=${userId}`);
+    const response = await fetch('https://getsavedscenarios-lui6djrjya-uc.a.run.app', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ data: { user_id: userId } })
+    });
     const result = await response.json();
-    countEl.textContent = result.count || result.scenarios?.length || 0;
+    const data = result.result || result;
+    countEl.textContent = data.count || data.scenarios?.length || 0;
   } catch (e) {
     console.error('Error loading scenarios count:', e);
   }
@@ -5216,18 +5226,23 @@ async function loadSavedScenario(scenarioId) {
   showToast('Loading scenario...', 'info');
   
   try {
-    const response = await fetch(`https://getsavedscenarios-lui6djrjya-uc.a.run.app?user_id=${userId}&scenario_id=${scenarioId}`);
+    const response = await fetch('https://getsavedscenarios-lui6djrjya-uc.a.run.app', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ data: { user_id: userId, scenario_id: scenarioId } })
+    });
     const result = await response.json();
+    const data = result.result || result;
     
-    if (result.success && result.scenario) {
+    if (data.success && data.scenario) {
       // Clear current state
       pendingSwaps = {};
       pendingAdds = [];
       pendingRemovals.clear();
       
       // Load swaps
-      if (result.scenario.swaps) {
-        result.scenario.swaps.forEach(swap => {
+      if (data.scenario.swaps) {
+        data.scenario.swaps.forEach(swap => {
           pendingSwaps[swap.club_id] = {
             original: swap.original,
             replacement: swap.replacement
@@ -5236,13 +5251,13 @@ async function loadSavedScenario(scenarioId) {
       }
       
       // Load adds
-      if (result.scenario.adds) {
-        pendingAdds = result.scenario.adds;
+      if (data.scenario.adds) {
+        pendingAdds = data.scenario.adds;
       }
       
       // Load removals
-      if (result.scenario.removals) {
-        result.scenario.removals.forEach(id => pendingRemovals.add(id));
+      if (data.scenario.removals) {
+        data.scenario.removals.forEach(id => pendingRemovals.add(id));
       }
       
       renderScenarioClubList();
