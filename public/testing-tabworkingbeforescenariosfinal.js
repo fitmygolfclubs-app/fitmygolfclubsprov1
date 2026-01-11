@@ -623,25 +623,8 @@ const TestingTab = (function() {
   }
 
   async function addToScenarioFull() {
-    // Get current test state
-    if (!testState.winner || !testState.selectedClubId) {
-      showToast('No test winner to add', 'error');
-      return;
-    }
-    
-    const winningClub = testState.winner === 'B' ? testState.clubB : testState.clubA;
-    const performanceData = testState.winner === 'B' ? testState.resultsB : testState.resultsA;
-    
-    // Call the scenario function (defined in firebase-auth.js)
-    if (typeof addTestWinnerToScenario === 'function') {
-      addTestWinnerToScenario({
-        clubId: testState.selectedClubId,
-        winningClub: winningClub,
-        performanceData: performanceData
-      });
-    } else {
-      showToast('Scenario feature not available', 'error');
-    }
+    // TODO: Implement full scenario creation with credit deduction
+    alert('Add to Scenario feature coming soon!');
   }
 
   // ============================================

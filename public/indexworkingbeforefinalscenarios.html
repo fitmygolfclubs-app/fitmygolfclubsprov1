@@ -1376,18 +1376,8 @@
             <div id="tab-scenarios" class="tab-content" style="display: none;">
                 <!-- Header -->
                 <div style="margin-bottom: 16px;">
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
-                        <div style="font-size: 14px; color: var(--text-muted);">
-                            What-if equipment changes <span class="patent-tag">Patent Pending</span>
-                        </div>
-                        <div style="display: flex; gap: 8px;">
-                            <button class="btn btn-secondary" style="padding: 8px 12px; font-size: 12px;" onclick="openSavedScenariosModal()">
-                                📁 Saved (<span id="saved-scenarios-count">0</span>)
-                            </button>
-                            <button class="btn btn-secondary pro-only" style="padding: 8px 12px; font-size: 12px; background: linear-gradient(135deg, var(--purple) 0%, #8b5cf6 100%); color: white; border: none;" onclick="startBuildFromScratch()">
-                                🆕 Build New Bag
-                            </button>
-                        </div>
+                    <div style="font-size: 14px; color: var(--text-muted); margin-bottom: 8px;">
+                        What-if equipment changes <span class="patent-tag">Patent Pending</span>
                     </div>
                     <div class="info-box" style="background: var(--cyan-dim); border-color: var(--cyan); color: var(--cyan);">
                         💡 <strong>Scenario Mode:</strong> Swap up to 7 clubs, then run ONE full analysis for 1 credit. 
@@ -1458,9 +1448,8 @@
 
                     <!-- Actions -->
                     <div style="display: flex; gap: 10px;">
-                        <button class="btn btn-secondary" onclick="openSaveScenarioModal()">💾 Save</button>
                         <button class="btn btn-primary" onclick="applyScenarioToBag()" style="flex: 1;">✅ Apply to Bag</button>
-                        <button class="btn btn-secondary" onclick="resetScenario()">🔄 New</button>
+                        <button class="btn btn-secondary" onclick="resetScenario()" style="flex: 1;">🔄 New Scenario</button>
                     </div>
                 </div>
             </div>
@@ -3166,20 +3155,11 @@
     </div>
 
     <!-- Saved Scenarios Modal -->
-    <div id="saved-scenarios-modal" class="modal-overlay" style="display: none;">
+    <div id="saved-scenarios-modal" class="modal-overlay">
         <div class="modal" style="max-width: 500px;">
             <div class="modal-header">
                 <h3 class="modal-title">📁 Saved Scenarios</h3>
                 <button class="modal-close" onclick="closeModal('saved-scenarios-modal')">&times;</button>
-            </div>
-
-            <!-- AI Recommendation (shows when 2+ scenarios) -->
-            <div id="saved-scenarios-ai-section" style="display: none; background: linear-gradient(135deg, rgba(139,92,246,0.1) 0%, rgba(139,92,246,0.05) 100%); border: 1px solid rgba(139,92,246,0.3); border-radius: 12px; padding: 14px; margin-bottom: 16px;">
-                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                    <span style="font-size: 18px;">🤖</span>
-                    <span style="font-size: 12px; font-weight: 600; color: var(--purple); text-transform: uppercase;">AI Recommendation</span>
-                </div>
-                <div id="saved-scenarios-ai-content" style="font-size: 13px; color: var(--text-secondary);"></div>
             </div>
 
             <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">
@@ -3187,7 +3167,62 @@
             </div>
 
             <div id="saved-scenarios-list">
-                <!-- Dynamically populated -->
+                <!-- Saved Scenario 1 -->
+                <div class="saved-scenario-card" onclick="loadScenario(1)">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div>
+                            <div style="font-weight: 600; margin-bottom: 4px;">3-Wood Shaft Upgrade</div>
+                            <div style="font-size: 12px; color: var(--text-muted);">TaylorMade Stealth 2 Plus + Fujikura Ventus Blue 75g</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-size: 18px; font-weight: 700; color: var(--green);">B+ → A-</div>
+                            <div style="font-size: 11px; color: var(--text-muted);">Dec 22</div>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 8px; margin-top: 12px;">
+                        <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 11px; flex: 1;" onclick="event.stopPropagation(); loadScenario(1)">Load</button>
+                        <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 11px; flex: 1;" onclick="event.stopPropagation(); applyScenarioFromSaved(1)">Apply</button>
+                        <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 11px; color: var(--red);" onclick="event.stopPropagation(); deleteScenario(1)">🗑️</button>
+                    </div>
+                </div>
+
+                <!-- Saved Scenario 2 -->
+                <div class="saved-scenario-card" onclick="loadScenario(2)">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div>
+                            <div style="font-weight: 600; margin-bottom: 4px;">4-Hybrid Flex Fix</div>
+                            <div style="font-size: 12px; color: var(--text-muted);">Callaway Apex + Project X HZRDUS Stiff</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-size: 18px; font-weight: 700; color: var(--green);">B+ → A-</div>
+                            <div style="font-size: 11px; color: var(--text-muted);">Dec 20</div>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 8px; margin-top: 12px;">
+                        <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 11px; flex: 1;" onclick="event.stopPropagation(); loadScenario(2)">Load</button>
+                        <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 11px; flex: 1;" onclick="event.stopPropagation(); applyScenarioFromSaved(2)">Apply</button>
+                        <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 11px; color: var(--red);" onclick="event.stopPropagation(); deleteScenario(2)">🗑️</button>
+                    </div>
+                </div>
+
+                <!-- Saved Scenario 3 -->
+                <div class="saved-scenario-card" onclick="loadScenario(3)">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div>
+                            <div style="font-weight: 600; margin-bottom: 4px;">Full Wedge Set Update</div>
+                            <div style="font-size: 12px; color: var(--text-muted);">Titleist Vokey SM10 (52°, 56°, 60°)</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-size: 18px; font-weight: 700; color: var(--green);">B+ → A</div>
+                            <div style="font-size: 11px; color: var(--text-muted);">Dec 18</div>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 8px; margin-top: 12px;">
+                        <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 11px; flex: 1;" onclick="event.stopPropagation(); loadScenario(3)">Load</button>
+                        <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 11px; flex: 1;" onclick="event.stopPropagation(); applyScenarioFromSaved(3)">Apply</button>
+                        <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 11px; color: var(--red);" onclick="event.stopPropagation(); deleteScenario(3)">🗑️</button>
+                    </div>
+                </div>
             </div>
 
             <div id="no-saved-scenarios" style="display: none; text-align: center; padding: 32px; color: var(--text-muted);">
@@ -3201,38 +3236,6 @@
     </div>
 
     <!-- Saved Tests Modal REMOVED - replaced by banner cards -->
-
-    <!-- Save Scenario Modal -->
-    <div id="save-scenario-modal" class="modal-overlay" style="display: none;">
-        <div class="modal" style="max-width: 420px;">
-            <div class="modal-header">
-                <h3 class="modal-title">💾 Save Scenario</h3>
-                <button class="modal-close" onclick="closeModal('save-scenario-modal')">&times;</button>
-            </div>
-            
-            <div style="margin-bottom: 16px;">
-                <label style="display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 6px;">Scenario Name</label>
-                <input type="text" id="save-scenario-name" 
-                       style="width: 100%; padding: 12px; background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 8px; color: var(--text-primary); font-size: 14px;"
-                       placeholder="e.g., Driver Upgrade - Qi10">
-            </div>
-            
-            <div style="background: var(--bg-secondary); border-radius: 10px; padding: 14px; margin-bottom: 16px;">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                    <span style="color: var(--text-muted);">Grade Change:</span>
-                    <span id="save-scenario-grade-change" style="font-weight: 600; color: var(--green);">--</span>
-                </div>
-                <div style="font-size: 12px; color: var(--text-muted);">
-                    <span id="save-scenario-change-count">0</span> change(s)
-                </div>
-            </div>
-            
-            <div style="display: flex; gap: 12px;">
-                <button class="btn btn-secondary" onclick="closeModal('save-scenario-modal')" style="flex: 1;">Cancel</button>
-                <button class="btn btn-primary" onclick="confirmSaveScenario()" style="flex: 1;">💾 Save</button>
-            </div>
-        </div>
-    </div>
 
     <!-- Save Test Modal (Custom styled) -->
     <div id="save-test-modal" class="modal-overlay" style="display: none;">
