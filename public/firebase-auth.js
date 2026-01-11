@@ -5058,9 +5058,10 @@ async function loadSavedScenarios() {
     const response = await fetch('https://getsavedscenarios-lui6djrjya-uc.a.run.app', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ data: { user_id: userId } })
+      body: JSON.stringify({ user_id: userId })
     });
     const result = await response.json();
+    console.log('getSavedScenarios response:', result);
     const data = result.result || result;
     
     if (data.success && data.scenarios && data.scenarios.length > 0) {
@@ -5137,7 +5138,7 @@ async function loadSavedScenariosCount() {
     const response = await fetch('https://getsavedscenarios-lui6djrjya-uc.a.run.app', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ data: { user_id: userId } })
+      body: JSON.stringify({ user_id: userId })
     });
     const result = await response.json();
     const data = result.result || result;
@@ -5185,7 +5186,7 @@ async function confirmSaveScenario() {
     const response = await fetch('https://savescenario-lui6djrjya-uc.a.run.app', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ data: {
+      body: JSON.stringify({
         user_id: userId,
         name: name,
         swaps: Object.entries(pendingSwaps).map(([id, data]) => ({
@@ -5197,18 +5198,18 @@ async function confirmSaveScenario() {
         removals: Array.from(pendingRemovals),
         current_grade: document.getElementById('scenario-current-grade')?.textContent,
         projected_grade: document.getElementById('scenario-projected-grade')?.textContent
-      }})
+      })
     });
     
     const result = await response.json();
-    const resData = result.result || result;
+    console.log('Save scenario response:', result);
     
-    if (resData.success) {
+    if (result.success || result.result?.success) {
       closeModal('save-scenario-modal');
       showToast('Scenario saved!', 'success');
       loadSavedScenariosCount();
     } else {
-      throw new Error(resData.error || 'Failed to save');
+      throw new Error(result.error || result.result?.error || 'Failed to save');
     }
   } catch (error) {
     console.error('Save scenario error:', error);
@@ -5230,7 +5231,7 @@ async function loadSavedScenario(scenarioId) {
     const response = await fetch('https://getsavedscenarios-lui6djrjya-uc.a.run.app', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ data: { user_id: userId, scenario_id: scenarioId } })
+      body: JSON.stringify({ user_id: userId, scenario_id: scenarioId })
     });
     const result = await response.json();
     const data = result.result || result;
@@ -5283,16 +5284,16 @@ async function applySavedScenario(scenarioId) {
     const response = await fetch('https://applyscenario-lui6djrjya-uc.a.run.app', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ data: {
+      body: JSON.stringify({
         user_id: userId,
         scenario_id: scenarioId
-      }})
+      })
     });
     
     const result = await response.json();
-    const resData = result.result || result;
+    console.log('Apply scenario response:', result);
     
-    if (resData.success) {
+    if (result.success || result.result?.success) {
       closeModal('saved-scenarios-modal');
       showToast('Scenario applied to bag!', 'success');
       // Refresh bag view
@@ -5300,7 +5301,7 @@ async function applySavedScenario(scenarioId) {
         loadClientBag(userId);
       }
     } else {
-      throw new Error(resData.error || 'Failed to apply');
+      throw new Error(result.error || result.result?.error || 'Failed to apply');
     }
   } catch (error) {
     console.error('Apply scenario error:', error);
@@ -5321,21 +5322,21 @@ async function deleteSavedScenario(scenarioId) {
     const response = await fetch('https://deletesavedscenario-lui6djrjya-uc.a.run.app', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ data: {
+      body: JSON.stringify({
         user_id: userId,
         scenario_id: scenarioId
-      }})
+      })
     });
     
     const result = await response.json();
-    const resData = result.result || result;
+    console.log('Delete scenario response:', result);
     
-    if (resData.success) {
+    if (result.success || result.result?.success) {
       showToast('Scenario deleted', 'success');
       loadSavedScenarios();
       loadSavedScenariosCount();
     } else {
-      throw new Error(resData.error || 'Failed to delete');
+      throw new Error(result.error || result.result?.error || 'Failed to delete');
     }
   } catch (error) {
     console.error('Delete scenario error:', error);
