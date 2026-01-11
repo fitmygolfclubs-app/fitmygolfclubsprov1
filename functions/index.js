@@ -66,26 +66,28 @@ async function getSwingProfile(db, userId) {
     const testsSnapshot = await db.collection('users').doc(userId)
       .collection('tests')
       .orderBy('created_at', 'desc')
-      .limit(20) // Last 20 tests
+      .limit(30) // Last 30 tests for better progression tracking
       .get();
     
     if (testsSnapshot.empty) {
       return null;
     }
     
-    // Aggregate metrics by club type
+    // Aggregate metrics by club type with timestamps for progression
     const metricsByClubType = {};
     const testResults = []; // For test history summary
     
-    testsSnapshot.docs.forEach(doc => {
+    testsSnapshot.docs.forEach((doc, index) => {
       const test = doc.data();
       const clubType = test.club_a?.clubType || 'unknown';
       const clubAData = test.club_a_data || {};
+      const testDate = test.created_at?.toDate?.() || new Date();
       
       // Initialize club type if not exists
       if (!metricsByClubType[clubType]) {
         metricsByClubType[clubType] = {
           count: 0,
+          // Store as {value, date, isRecent} for progression tracking
           smashFactor: [],
           attackAngle: [],
           clubPath: [],
@@ -94,22 +96,32 @@ async function getSwingProfile(db, userId) {
           spinRate: [],
           ballSpeed: [],
           clubSpeed: [],
-          carry: []
+          carry: [],
+          dates: [] // Track test dates
         };
       }
       
-      // Collect non-null values
+      // Collect non-null values with date info
       const m = metricsByClubType[clubType];
+      const isRecent = m.count < 5; // First 5 (most recent due to desc order)
       m.count++;
-      if (clubAData.smashFactor) m.smashFactor.push(parseFloat(clubAData.smashFactor));
-      if (clubAData.attackAngle) m.attackAngle.push(parseFloat(clubAData.attackAngle));
-      if (clubAData.clubPath) m.clubPath.push(parseFloat(clubAData.clubPath));
-      if (clubAData.faceAngle) m.faceAngle.push(parseFloat(clubAData.faceAngle));
-      if (clubAData.launch || clubAData.launchAngle) m.launchAngle.push(parseFloat(clubAData.launch || clubAData.launchAngle));
-      if (clubAData.spin || clubAData.spinRate) m.spinRate.push(parseFloat(clubAData.spin || clubAData.spinRate));
-      if (clubAData.ballSpeed) m.ballSpeed.push(parseFloat(clubAData.ballSpeed));
-      if (clubAData.clubSpeed) m.clubSpeed.push(parseFloat(clubAData.clubSpeed));
-      if (clubAData.carry) m.carry.push(parseFloat(clubAData.carry));
+      m.dates.push(testDate);
+      
+      const addMetric = (arr, value) => {
+        if (value !== undefined && value !== null && !isNaN(parseFloat(value))) {
+          arr.push({ value: parseFloat(value), date: testDate, isRecent });
+        }
+      };
+      
+      addMetric(m.smashFactor, clubAData.smashFactor);
+      addMetric(m.attackAngle, clubAData.attackAngle);
+      addMetric(m.clubPath, clubAData.clubPath);
+      addMetric(m.faceAngle, clubAData.faceAngle);
+      addMetric(m.launchAngle, clubAData.launch || clubAData.launchAngle);
+      addMetric(m.spinRate, clubAData.spin || clubAData.spinRate);
+      addMetric(m.ballSpeed, clubAData.ballSpeed);
+      addMetric(m.clubSpeed, clubAData.clubSpeed);
+      addMetric(m.carry, clubAData.carry);
       
       // Track test results for history
       if (test.winner && test.net_gains) {
@@ -118,19 +130,35 @@ async function getSwingProfile(db, userId) {
           myClub: `${test.club_a?.brand || ''} ${test.club_a?.model || ''}`.trim(),
           testedClub: `${test.club_b?.brand || ''} ${test.club_b?.model || ''}`.trim(),
           winner: test.winner,
-          carryGain: test.net_gains?.carry || 0
+          carryGain: test.net_gains?.carry || 0,
+          date: testDate
         });
       }
     });
     
-    // Calculate averages and insights
-    const avg = (arr) => arr.length > 0 ? (arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(1) : null;
+    // Calculate averages, progression, and insights
+    const avg = (arr) => arr.length > 0 ? (arr.reduce((a, b) => a + b.value, 0) / arr.length).toFixed(1) : null;
+    const avgRecent = (arr) => {
+      const recent = arr.filter(x => x.isRecent);
+      return recent.length > 0 ? (recent.reduce((a, b) => a + b.value, 0) / recent.length).toFixed(1) : null;
+    };
+    const avgOlder = (arr) => {
+      const older = arr.filter(x => !x.isRecent);
+      return older.length > 0 ? (older.reduce((a, b) => a + b.value, 0) / older.length).toFixed(1) : null;
+    };
     
     const swingProfile = {};
     
     for (const [clubType, metrics] of Object.entries(metricsByClubType)) {
+      // Calculate date range
+      const sortedDates = metrics.dates.sort((a, b) => a - b);
+      const oldestDate = sortedDates[0];
+      const newestDate = sortedDates[sortedDates.length - 1];
+      const daySpan = Math.round((newestDate - oldestDate) / (1000 * 60 * 60 * 24));
+      
       swingProfile[clubType] = {
         testCount: metrics.count,
+        dateRange: daySpan > 0 ? `${daySpan} days` : 'same day',
         avgSmashFactor: avg(metrics.smashFactor),
         avgAttackAngle: avg(metrics.attackAngle),
         avgClubPath: avg(metrics.clubPath),
@@ -141,6 +169,53 @@ async function getSwingProfile(db, userId) {
         avgClubSpeed: avg(metrics.clubSpeed),
         avgCarry: avg(metrics.carry)
       };
+      
+      // Calculate progression (recent vs older) if enough data
+      const progression = [];
+      if (metrics.count >= 4) { // Need at least 4 tests for meaningful progression
+        const calcProgress = (arr, name, unit, goodDirection = 'up') => {
+          const recent = avgRecent(arr);
+          const older = avgOlder(arr);
+          if (recent && older) {
+            const diff = (parseFloat(recent) - parseFloat(older)).toFixed(1);
+            const diffNum = parseFloat(diff);
+            if (Math.abs(diffNum) >= 0.5) { // Only report meaningful changes
+              const direction = diffNum > 0 ? 'up' : 'down';
+              const isGood = (direction === goodDirection) || 
+                            (goodDirection === 'neutral') ||
+                            (goodDirection === 'down' && direction === 'down');
+              const emoji = isGood ? '📈' : '📉';
+              const sign = diffNum > 0 ? '+' : '';
+              progression.push(`${emoji} ${name}: ${sign}${diff}${unit} (${older} → ${recent})`);
+            }
+          }
+        };
+        
+        // Track key metrics progression
+        calcProgress(metrics.carry, 'Carry', ' yds', 'up');
+        calcProgress(metrics.ballSpeed, 'Ball Speed', ' mph', 'up');
+        calcProgress(metrics.smashFactor, 'Smash Factor', '', 'up');
+        calcProgress(metrics.clubSpeed, 'Club Speed', ' mph', 'up');
+        
+        // For spin, direction depends on club type
+        if (clubType.toLowerCase().includes('driver')) {
+          // For driver, lower spin is usually better (unless too low)
+          const recentSpin = avgRecent(metrics.spinRate);
+          const olderSpin = avgOlder(metrics.spinRate);
+          if (recentSpin && olderSpin) {
+            const diff = parseFloat(recentSpin) - parseFloat(olderSpin);
+            if (Math.abs(diff) >= 50) {
+              const isGood = (diff < 0 && parseFloat(recentSpin) > 2000) || 
+                            (diff > 0 && parseFloat(olderSpin) < 2000);
+              const emoji = isGood ? '📈' : '📉';
+              const sign = diff > 0 ? '+' : '';
+              progression.push(`${emoji} Spin: ${sign}${diff.toFixed(0)} rpm (${olderSpin} → ${recentSpin})`);
+            }
+          }
+        }
+      }
+      
+      swingProfile[clubType].progression = progression;
       
       // Add swing pattern insights
       const insights = [];
@@ -239,6 +314,14 @@ function formatSwingProfileForPrompt(swingProfile) {
         prompt += `- ${insight}\n`;
       });
     }
+    
+    // Add progression data if available
+    if (data.progression && data.progression.length > 0) {
+      prompt += `\n**Progression (over ${data.dateRange}):**\n`;
+      data.progression.forEach(prog => {
+        prompt += `${prog}\n`;
+      });
+    }
     prompt += '\n';
   }
   
@@ -252,6 +335,158 @@ function formatSwingProfileForPrompt(swingProfile) {
     });
     prompt += '\n';
   }
+  
+  return prompt;
+}
+
+/**
+ * Get previous AI insights for a user (compounding memory chain)
+ * Each summary carries forward key learnings from previous sessions
+ * 
+ * @param {FirebaseFirestore.Firestore} db - Firestore instance
+ * @param {string} userId - User ID
+ * @returns {Object} Previous insights with summaries array
+ */
+async function getAIInsights(db, userId) {
+  try {
+    const insightsDoc = await db.doc(`users/${userId}/aiMemory/insights`).get();
+    
+    if (!insightsDoc.exists) {
+      return { summaries: [], totalSessions: 0 };
+    }
+    
+    return insightsDoc.data();
+  } catch (error) {
+    console.error('Error fetching AI insights:', error);
+    return { summaries: [], totalSessions: 0 };
+  }
+}
+
+/**
+ * Save new AI insight and maintain rolling window of 10
+ * 
+ * @param {FirebaseFirestore.Firestore} db - Firestore instance
+ * @param {string} userId - User ID
+ * @param {Object} newInsight - New insight to save
+ */
+async function saveAIInsight(db, userId, newInsight) {
+  try {
+    const insightsRef = db.doc(`users/${userId}/aiMemory/insights`);
+    const insightsDoc = await insightsRef.get();
+    
+    let summaries = [];
+    let totalSessions = 0;
+    
+    if (insightsDoc.exists) {
+      const data = insightsDoc.data();
+      summaries = data.summaries || [];
+      totalSessions = data.totalSessions || 0;
+    }
+    
+    // Add new insight at the beginning (most recent first)
+    summaries.unshift({
+      date: new Date().toISOString(),
+      type: newInsight.type || 'test',
+      context: newInsight.context || '',
+      summary: newInsight.summary || '',
+      keyLearnings: newInsight.keyLearnings || []
+    });
+    
+    // Keep only last 10 summaries
+    if (summaries.length > 10) {
+      summaries = summaries.slice(0, 10);
+    }
+    
+    await insightsRef.set({
+      summaries,
+      totalSessions: totalSessions + 1,
+      lastUpdated: admin.firestore.FieldValue.serverTimestamp()
+    });
+    
+    console.log(`✅ AI insight saved for user ${userId}. Total sessions: ${totalSessions + 1}`);
+    
+  } catch (error) {
+    console.error('Error saving AI insight:', error);
+    // Don't throw - this is supplementary functionality
+  }
+}
+
+/**
+ * Extract key learnings from AI response
+ * Looks for "Key Learnings:" section or extracts main points
+ */
+function extractKeyLearnings(aiResponse) {
+  const learnings = [];
+  
+  // Try to find explicit Key Learnings section
+  const keyLearningsMatch = aiResponse.match(/(?:Key Learnings?|Carry Forward|Remember):?\s*\n([\s\S]*?)(?:\n\n|$)/i);
+  
+  if (keyLearningsMatch) {
+    const section = keyLearningsMatch[1];
+    const bullets = section.match(/[-•*]\s*(.+)/g);
+    if (bullets) {
+      bullets.forEach(bullet => {
+        const text = bullet.replace(/^[-•*]\s*/, '').trim();
+        if (text.length > 10 && text.length < 200) {
+          learnings.push(text);
+        }
+      });
+    }
+  }
+  
+  // If no explicit section, extract from response (first 3 substantive points)
+  if (learnings.length === 0) {
+    const sentences = aiResponse.split(/[.!?]+/).filter(s => s.trim().length > 20);
+    // Look for sentences with actionable insights
+    const insightKeywords = ['should', 'recommend', 'suggests', 'benefit', 'improve', 'consider', 'ideal', 'optimal', 'pattern', 'tendency'];
+    
+    for (const sentence of sentences) {
+      if (learnings.length >= 3) break;
+      const lower = sentence.toLowerCase();
+      if (insightKeywords.some(kw => lower.includes(kw))) {
+        learnings.push(sentence.trim().substring(0, 150));
+      }
+    }
+  }
+  
+  return learnings.slice(0, 3); // Max 3 key learnings per session
+}
+
+/**
+ * Format previous AI insights for inclusion in prompt
+ */
+function formatAIInsightsForPrompt(insights) {
+  if (!insights || !insights.summaries || insights.summaries.length === 0) {
+    return '';
+  }
+  
+  let prompt = `\n## AI FITTER MEMORY (${insights.totalSessions} total sessions with this golfer)\n`;
+  prompt += `*You have an ongoing relationship with this golfer. Use these insights to provide continuity and personalized guidance. Carry forward important learnings in your response.*\n\n`;
+  
+  // Show summaries from oldest to newest for narrative flow
+  const chronological = [...insights.summaries].reverse();
+  
+  chronological.forEach((insight, index) => {
+    const sessionNum = insights.totalSessions - insights.summaries.length + index + 1;
+    const date = new Date(insight.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    
+    prompt += `**Session ${sessionNum} (${date})** - ${insight.type === 'bag_grade' ? 'Bag Analysis' : 'Equipment Test'}\n`;
+    
+    if (insight.context) {
+      prompt += `Context: ${insight.context}\n`;
+    }
+    
+    if (insight.keyLearnings && insight.keyLearnings.length > 0) {
+      prompt += `Key Learnings:\n`;
+      insight.keyLearnings.forEach(learning => {
+        prompt += `  • ${learning}\n`;
+      });
+    }
+    
+    prompt += '\n';
+  });
+  
+  prompt += `**IMPORTANT:** At the end of your response, include a "## Key Learnings" section with 2-3 bullet points that capture the most important insights from THIS session that should persist to future sessions. These should compound on previous learnings.\n\n`;
   
   return prompt;
 }
@@ -358,9 +593,12 @@ try {
 
     // Fetch swing profile from test data (learning loop)
     const swingProfile = await getSwingProfile(admin.firestore(), userId);
+    
+    // Fetch previous AI insights (compounding memory)
+    const aiInsights = await getAIInsights(admin.firestore(), userId);
 
-    // Build the prompt for Claude with swing data
-    const prompt = buildClaudePrompt(analysisData, clubs, userData, swingProfile);
+    // Build the prompt for Claude with swing data and insights
+    const prompt = buildClaudePrompt(analysisData, clubs, userData, swingProfile, aiInsights);
 
     // Call Claude API
     logger.info("Calling Claude API...");
@@ -390,6 +628,15 @@ try {
                       claudeResponse.data.usage.output_tokens;
 
     logger.info(`Claude API successful. Tokens used: ${tokensUsed}`);
+    
+    // Extract key learnings and save insight (compounding memory)
+    const keyLearnings = extractKeyLearnings(recommendation);
+    await saveAIInsight(admin.firestore(), userId, {
+      type: 'bag_grade',
+      context: `Bag grade: ${analysisData.overall_grade} (${analysisData.overall_score}/100). Top priority: ${analysisData.top_priority_fix}`,
+      summary: recommendation.substring(0, 500), // First 500 chars as summary
+      keyLearnings
+    });
 
     // Save the recommendation to Firestore
     const recommendationRef = await admin.firestore()
@@ -424,7 +671,7 @@ try {
 /**
  * Helper function to build the prompt for Claude
  */
-function buildClaudePrompt(analysisData, clubs, userData, swingProfile = null) {
+function buildClaudePrompt(analysisData, clubs, userData, swingProfile = null, aiInsights = null) {
   const clubsList = clubs.map((club) => {
     const rawFlex = club.shaft?.flex || club.shaft_flex;
     const normalizedFlex = rawFlex ? normalizeFlexValue(rawFlex) : 'N/A';
@@ -455,6 +702,9 @@ ${analysisData.issues_found.map((issue, i) => `${i + 1}. ${issue}`).join("\n")}
 TOP PRIORITY: ${analysisData.top_priority_fix}
 `;
 
+  // Add AI memory/insights from previous sessions (compounding memory chain)
+  prompt += formatAIInsightsForPrompt(aiInsights);
+
   // Add swing profile data if available (learning loop)
   prompt += formatSwingProfileForPrompt(swingProfile);
 
@@ -466,6 +716,7 @@ Focus on:
 3. Specific, actionable recommendations
 4. How these changes will help their game
 ${swingProfile ? '5. Use the measured swing data to personalize recommendations (e.g., if high spin, suggest lower-spin options)' : ''}
+${aiInsights && aiInsights.summaries?.length > 0 ? '6. Reference relevant insights from previous sessions to show continuity' : ''}
 
 Keep the tone professional but friendly and encouraging. Remember that golfers can be 
 sensitive about their equipment choices, so frame suggestions positively.`;
@@ -6815,8 +7066,11 @@ exports.generatePersonalizedRecommendation = onCall({
     // Fetch swing profile from test data (learning loop)
     const swingProfile = await getSwingProfile(db, targetUserId);
     
-    // Build personalized prompt with swing data
-    const prompt = buildPersonalizedPrompt(profile, bagData, analysisType, userQuery, additionalContext, swingProfile);
+    // Fetch previous AI insights (compounding memory)
+    const aiInsights = await getAIInsights(db, targetUserId);
+    
+    // Build personalized prompt with swing data and AI memory
+    const prompt = buildPersonalizedPrompt(profile, bagData, analysisType, userQuery, additionalContext, swingProfile, aiInsights);
     
     // Call Claude API using Anthropic SDK
     const apiKey = getAnthropicKey();
@@ -6836,6 +7090,24 @@ exports.generatePersonalizedRecommendation = onCall({
     
     const recommendation = response.content[0]?.text || 'Unable to generate recommendation.';
     const tokensUsed = (response.usage?.input_tokens || 0) + (response.usage?.output_tokens || 0);
+    
+    // Extract key learnings and save insight (compounding memory)
+    const keyLearnings = extractKeyLearnings(recommendation);
+    
+    // Build context from additionalContext if available
+    let insightContext = analysisType || 'test';
+    if (additionalContext) {
+      if (additionalContext.clubA && additionalContext.clubB) {
+        insightContext = `${additionalContext.clubA.clubType || 'Club'} test: ${additionalContext.clubA.brand || ''} ${additionalContext.clubA.model || ''} vs ${additionalContext.clubB.brand || ''} ${additionalContext.clubB.model || ''}`;
+      }
+    }
+    
+    await saveAIInsight(db, targetUserId, {
+      type: 'test',
+      context: insightContext,
+      summary: recommendation.substring(0, 500),
+      keyLearnings
+    });
     
     // Log for analytics
     await db.collection('aiRecommendations').add({
@@ -6933,7 +7205,7 @@ Give a brief (2-3 sentence) recommendation. Be specific and actionable.`;
  * Build personalized prompt from profile data
  * Incorporates communication style, goals, typical miss, and favorite club baseline
  */
-function buildPersonalizedPrompt(profile, bagData, analysisType, userQuery, additionalContext, swingProfile = null) {
+function buildPersonalizedPrompt(profile, bagData, analysisType, userQuery, additionalContext, swingProfile = null, aiInsights = null) {
   let prompt = '';
   
   // ==========================================================================
@@ -6960,6 +7232,11 @@ function buildPersonalizedPrompt(profile, bagData, analysisType, userQuery, addi
 - Favorite Club Grading: ${profile.enableFavoriteClubGrading ? 'ENABLED' : 'Disabled'}
 - Body Fit Baseline: ${profile.enableBodyFitBaseline ? 'ENABLED' : 'Disabled'}
 `;
+
+  // ==========================================================================
+  // AI FITTER MEMORY (Compounding Memory Chain)
+  // ==========================================================================
+  prompt += formatAIInsightsForPrompt(aiInsights);
 
   // ==========================================================================
   // MEASURED SWING DATA (Learning Loop)

@@ -11294,10 +11294,10 @@
                 const db = firebase.firestore();
                 const testsRef = db.collection('users').doc(userId).collection('tests');
                 
-                // Check current count - enforce 10 max
+                // Check current count - enforce 30 max
                 const existingTests = await testsRef.orderBy('created_at', 'desc').get();
                 
-                if (existingTests.size >= 10) {
+                if (existingTests.size >= 30) {
                     // Delete oldest test to make room
                     const oldestTest = existingTests.docs[existingTests.docs.length - 1];
                     await oldestTest.ref.delete();
