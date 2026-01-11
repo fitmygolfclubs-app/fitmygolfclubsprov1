@@ -5185,7 +5185,7 @@ async function confirmSaveScenario() {
     const response = await fetch('https://savescenario-lui6djrjya-uc.a.run.app', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+      body: JSON.stringify({ data: {
         user_id: userId,
         name: name,
         swaps: Object.entries(pendingSwaps).map(([id, data]) => ({
@@ -5197,17 +5197,18 @@ async function confirmSaveScenario() {
         removals: Array.from(pendingRemovals),
         current_grade: document.getElementById('scenario-current-grade')?.textContent,
         projected_grade: document.getElementById('scenario-projected-grade')?.textContent
-      })
+      }})
     });
     
     const result = await response.json();
+    const resData = result.result || result;
     
-    if (result.success) {
+    if (resData.success) {
       closeModal('save-scenario-modal');
       showToast('Scenario saved!', 'success');
       loadSavedScenariosCount();
     } else {
-      throw new Error(result.error || 'Failed to save');
+      throw new Error(resData.error || 'Failed to save');
     }
   } catch (error) {
     console.error('Save scenario error:', error);
@@ -5282,15 +5283,16 @@ async function applySavedScenario(scenarioId) {
     const response = await fetch('https://applyscenario-lui6djrjya-uc.a.run.app', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+      body: JSON.stringify({ data: {
         user_id: userId,
         scenario_id: scenarioId
-      })
+      }})
     });
     
     const result = await response.json();
+    const resData = result.result || result;
     
-    if (result.success) {
+    if (resData.success) {
       closeModal('saved-scenarios-modal');
       showToast('Scenario applied to bag!', 'success');
       // Refresh bag view
@@ -5298,7 +5300,7 @@ async function applySavedScenario(scenarioId) {
         loadClientBag(userId);
       }
     } else {
-      throw new Error(result.error || 'Failed to apply');
+      throw new Error(resData.error || 'Failed to apply');
     }
   } catch (error) {
     console.error('Apply scenario error:', error);
@@ -5319,20 +5321,21 @@ async function deleteSavedScenario(scenarioId) {
     const response = await fetch('https://deletesavedscenario-lui6djrjya-uc.a.run.app', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+      body: JSON.stringify({ data: {
         user_id: userId,
         scenario_id: scenarioId
-      })
+      }})
     });
     
     const result = await response.json();
+    const resData = result.result || result;
     
-    if (result.success) {
+    if (resData.success) {
       showToast('Scenario deleted', 'success');
       loadSavedScenarios();
       loadSavedScenariosCount();
     } else {
-      throw new Error(result.error || 'Failed to delete');
+      throw new Error(resData.error || 'Failed to delete');
     }
   } catch (error) {
     console.error('Delete scenario error:', error);
