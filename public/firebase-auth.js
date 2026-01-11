@@ -5055,25 +5055,27 @@ async function loadSavedScenarios() {
   listEl.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-muted);">Loading...</div>';
   
   try {
-    const response = await fetch('https://getsavedscenarios-lui6djrjya-uc.a.run.app', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id: userId })
-    });
-    const result = await response.json();
-    console.log('getSavedScenarios response:', result);
-    const data = result.result || result;
+    // Read directly from Firestore
+    const scenariosRef = firebase.firestore().collection('users').doc(userId).collection('scenarios');
+    const snapshot = await scenariosRef.orderBy('created_at', 'desc').limit(10).get();
     
-    if (data.success && data.scenarios && data.scenarios.length > 0) {
+    const scenarios = [];
+    snapshot.forEach(doc => {
+      scenarios.push({ id: doc.id, ...doc.data() });
+    });
+    
+    console.log('Loaded scenarios:', scenarios);
+    
+    if (scenarios.length > 0) {
       if (noScenariosEl) noScenariosEl.style.display = 'none';
       
       let html = '';
-      data.scenarios.forEach(scenario => {
+      scenarios.forEach(scenario => {
         const typeIcon = scenario.scenario_type === 'build_from_scratch' ? '🟣' :
                          scenario.scenario_type === 'from_test' ? '🔵' : '🟢';
-        const date = scenario.created_at ? 
-          new Date(scenario.created_at._seconds ? scenario.created_at._seconds * 1000 : scenario.created_at)
-          .toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
+        const date = scenario.created_at?.toDate ? 
+          scenario.created_at.toDate().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 
+          '';
         
         html += `
           <div class="saved-scenario-card" style="background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 12px; padding: 14px; margin-bottom: 10px; cursor: pointer;" onclick="loadSavedScenario('${scenario.id}')">
@@ -5099,16 +5101,18 @@ async function loadSavedScenarios() {
       listEl.innerHTML = html;
       
       // AI recommendation if 2+ scenarios
-      if (data.scenarios.length >= 2 && aiSection) {
+      if (scenarios.length >= 2 && aiSection) {
         aiSection.style.display = 'block';
-        const best = data.scenarios.reduce((b, s) => {
-          const bImprove = (b.projected_score || 0) - (b.current_score || 0);
+        // Find best scenario by score improvement
+        let best = scenarios[0];
+        scenarios.forEach(s => {
           const sImprove = (s.projected_score || 0) - (s.current_score || 0);
-          return sImprove > bImprove ? s : b;
-        }, data.scenarios[0]);
+          const bImprove = (best.projected_score || 0) - (best.current_score || 0);
+          if (sImprove > bImprove) best = s;
+        });
         const improve = (best.projected_score || 0) - (best.current_score || 0);
         document.getElementById('saved-scenarios-ai-content').innerHTML = 
-          `"<strong>${best.name}</strong>" offers the best improvement at <strong>+${improve} points</strong> (${best.current_grade} → ${best.projected_grade}).`;
+          `"<strong>${best.name || 'Unnamed'}</strong>" offers the best improvement${improve > 0 ? ` at <strong>+${improve} points</strong>` : ''} (${best.current_grade || '--'} → ${best.projected_grade || '--'}).`;
       } else if (aiSection) {
         aiSection.style.display = 'none';
       }
@@ -5135,14 +5139,9 @@ async function loadSavedScenariosCount() {
   if (!userId) return;
   
   try {
-    const response = await fetch('https://getsavedscenarios-lui6djrjya-uc.a.run.app', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id: userId })
-    });
-    const result = await response.json();
-    const data = result.result || result;
-    countEl.textContent = data.count || data.scenarios?.length || 0;
+    const scenariosRef = firebase.firestore().collection('users').doc(userId).collection('scenarios');
+    const snapshot = await scenariosRef.get();
+    countEl.textContent = snapshot.size || 0;
   } catch (e) {
     console.error('Error loading scenarios count:', e);
   }
@@ -5183,34 +5182,27 @@ async function confirmSaveScenario() {
   }
   
   try {
-    const response = await fetch('https://savescenario-lui6djrjya-uc.a.run.app', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        user_id: userId,
-        name: name,
-        swaps: Object.entries(pendingSwaps).map(([id, data]) => ({
-          club_id: id,
-          original: data.original,
-          replacement: data.replacement
-        })),
-        adds: pendingAdds,
-        removals: Array.from(pendingRemovals),
-        current_grade: document.getElementById('scenario-current-grade')?.textContent,
-        projected_grade: document.getElementById('scenario-projected-grade')?.textContent
-      })
+    // Get the most recent auto-saved scenario and update its name
+    const scenariosRef = firebase.firestore().collection('users').doc(userId).collection('scenarios');
+    const snapshot = await scenariosRef.orderBy('created_at', 'desc').limit(1).get();
+    
+    if (snapshot.empty) {
+      showToast('No scenario to save. Run analysis first.', 'error');
+      return;
+    }
+    
+    const scenarioDoc = snapshot.docs[0];
+    await scenarioDoc.ref.update({
+      name: name,
+      current_grade: document.getElementById('scenario-current-grade')?.textContent || '',
+      projected_grade: document.getElementById('scenario-projected-grade')?.textContent || ''
     });
     
-    const result = await response.json();
-    console.log('Save scenario response:', result);
+    console.log('✅ Scenario name updated:', name);
+    closeModal('save-scenario-modal');
+    showToast('Scenario saved!', 'success');
+    loadSavedScenariosCount();
     
-    if (result.success || result.result?.success) {
-      closeModal('save-scenario-modal');
-      showToast('Scenario saved!', 'success');
-      loadSavedScenariosCount();
-    } else {
-      throw new Error(result.error || result.result?.error || 'Failed to save');
-    }
   } catch (error) {
     console.error('Save scenario error:', error);
     showToast('Error: ' + error.message, 'error');
@@ -5228,23 +5220,20 @@ async function loadSavedScenario(scenarioId) {
   showToast('Loading scenario...', 'info');
   
   try {
-    const response = await fetch('https://getsavedscenarios-lui6djrjya-uc.a.run.app', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id: userId, scenario_id: scenarioId })
-    });
-    const result = await response.json();
-    const data = result.result || result;
+    const scenarioRef = firebase.firestore().collection('users').doc(userId).collection('scenarios').doc(scenarioId);
+    const doc = await scenarioRef.get();
     
-    if (data.success && data.scenario) {
+    if (doc.exists) {
+      const scenario = doc.data();
+      
       // Clear current state
       pendingSwaps = {};
       pendingAdds = [];
       pendingRemovals.clear();
       
       // Load swaps
-      if (data.scenario.swaps) {
-        data.scenario.swaps.forEach(swap => {
+      if (scenario.swaps) {
+        scenario.swaps.forEach(swap => {
           pendingSwaps[swap.club_id] = {
             original: swap.original,
             replacement: swap.replacement
@@ -5253,17 +5242,19 @@ async function loadSavedScenario(scenarioId) {
       }
       
       // Load adds
-      if (data.scenario.adds) {
-        pendingAdds = data.scenario.adds;
+      if (scenario.adds) {
+        pendingAdds = scenario.adds;
       }
       
       // Load removals
-      if (data.scenario.removals) {
-        data.scenario.removals.forEach(id => pendingRemovals.add(id));
+      if (scenario.removals) {
+        scenario.removals.forEach(id => pendingRemovals.add(id));
       }
       
       renderScenarioClubList();
       showToast('Scenario loaded', 'success');
+    } else {
+      showToast('Scenario not found', 'error');
     }
   } catch (error) {
     console.error('Load scenario error:', error);
@@ -5281,27 +5272,47 @@ async function applySavedScenario(scenarioId) {
   if (!userId) return;
   
   try {
-    const response = await fetch('https://applyscenario-lui6djrjya-uc.a.run.app', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        user_id: userId,
-        scenario_id: scenarioId
-      })
-    });
+    // Get the scenario
+    const scenarioRef = firebase.firestore().collection('users').doc(userId).collection('scenarios').doc(scenarioId);
+    const doc = await scenarioRef.get();
     
-    const result = await response.json();
-    console.log('Apply scenario response:', result);
+    if (!doc.exists) {
+      showToast('Scenario not found', 'error');
+      return;
+    }
     
-    if (result.success || result.result?.success) {
-      closeModal('saved-scenarios-modal');
-      showToast('Scenario applied to bag!', 'success');
-      // Refresh bag view
-      if (typeof loadClientBag === 'function') {
-        loadClientBag(userId);
+    const scenario = doc.data();
+    const clubsRef = firebase.firestore().collection('users').doc(userId).collection('clubs');
+    
+    // Apply swaps
+    if (scenario.swaps && scenario.swaps.length > 0) {
+      const batch = firebase.firestore().batch();
+      
+      for (const swap of scenario.swaps) {
+        if (swap.club_id && swap.replacement) {
+          const clubRef = clubsRef.doc(swap.club_id);
+          batch.update(clubRef, {
+            brand: swap.replacement.brand || '',
+            model: swap.replacement.model || '',
+            year: swap.replacement.year || null,
+            shaft_brand: swap.replacement.shaft_brand || '',
+            shaft_model: swap.replacement.shaft_model || '',
+            shaft_weight: swap.replacement.shaft_weight || null,
+            shaft_flex: swap.replacement.shaft_flex || '',
+            updated_at: firebase.firestore.FieldValue.serverTimestamp()
+          });
+        }
       }
-    } else {
-      throw new Error(result.error || result.result?.error || 'Failed to apply');
+      
+      await batch.commit();
+    }
+    
+    closeModal('saved-scenarios-modal');
+    showToast('Scenario applied to bag!', 'success');
+    
+    // Refresh bag view
+    if (typeof loadClientBag === 'function') {
+      loadClientBag(userId);
     }
   } catch (error) {
     console.error('Apply scenario error:', error);
@@ -5319,25 +5330,12 @@ async function deleteSavedScenario(scenarioId) {
   if (!userId) return;
   
   try {
-    const response = await fetch('https://deletesavedscenario-lui6djrjya-uc.a.run.app', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        user_id: userId,
-        scenario_id: scenarioId
-      })
-    });
+    await firebase.firestore().collection('users').doc(userId).collection('scenarios').doc(scenarioId).delete();
     
-    const result = await response.json();
-    console.log('Delete scenario response:', result);
-    
-    if (result.success || result.result?.success) {
-      showToast('Scenario deleted', 'success');
-      loadSavedScenarios();
-      loadSavedScenariosCount();
-    } else {
-      throw new Error(result.error || result.result?.error || 'Failed to delete');
-    }
+    console.log('✅ Scenario deleted:', scenarioId);
+    showToast('Scenario deleted', 'success');
+    loadSavedScenarios();
+    loadSavedScenariosCount();
   } catch (error) {
     console.error('Delete scenario error:', error);
     showToast('Error: ' + error.message, 'error');
